@@ -86,8 +86,23 @@ Oracle hook (codex-reviewed): static per-pin `timing_pin_weight = scale·crit_n`
 
 **STILL-OPEN CAVEATS:** (1) net-weighting oracle, not the RC-correction oracle (codex distinction); (2) stale criticality (baseline route) — yet it still helped, suggesting routed-critical nets are fairly stable; (3) NOT iso-congestion (wire-cap rose) — must compare against ESTIMATED-criticality weighting at matched WL to isolate the *route-awareness* value (vs just "more timing weighting"); (4) single design (aes), one GR pass.
 
+## R9. Route-awareness isolation (2026-06-17): routed ≈ estimated criticality on aes — a clarifying partial-negative
+Estimated-criticality (Steiner/D_place slacks) arm vs the routed (oracle) arm, matched scale:
+
+| scale | routed(oracle) D_route TNS | estimated D_route TNS |
+|---|---|---|
+| 0 (base) | −60.1 | −60.1 |
+| 0.1 | −63.5 | −61.5 |
+| **0.3** | **−51.2** | **−51.8** |
+| 0.5 | — | −53.7 |
+
+**At the sweet spot routed ≈ estimated (−51.2 vs −51.8).** So the ~15% post-route TNS gain is from **timing-weighting per se, NOT route-awareness.** The true routed criticality added ~nothing over the cheap estimate — for the net-weighting mechanism, on this design.
+**Why this does NOT kill the thesis (both testable):**
+1. **aes is uncongested** (40% util, 0 DRC) → routed-criticality ≈ estimated *by construction* (little routing distortion). Route-awareness can only pay where routed **diverges** from estimated → **congested/macro designs** (ariane133; or high-`target_density` aes). The critical-net SETS already overlapped here (same worst nets `_00046_`/`_08330_`/`_09017_`), confirming low divergence.
+2. **Net-weighting uses only the criticality RANKING** (similar for both); the thesis mechanism corrects per-arc **delay magnitudes** — info net-weighting structurally cannot exploit. The faithful **RC-correction oracle** is the real test.
+
 ## IN FLIGHT (2026-06-17)
-- **Refine the sweet spot** (scales 0.2/0.4/0.5) + the decisive **estimated-criticality comparison arm** (Xplace-Timing-style weights from D_place Steiner slacks at the same scales): does ROUTED-criticality beat ESTIMATED at matched scale/WL? That isolates route-awareness value (the thesis claim).
+- **Two decisive follow-ups:** (a) re-run the routed-vs-estimated isolation on a **congested** substrate (high-util aes and/or ariane133) where routed≠estimated — that is where route-awareness should pay; (b) the **RC-correction oracle** (feed true routed per-arc RC into the placer's delay model, not net-weights). If route-awareness shows no advantage even on a congested design via RC-correction, the thesis's hard physical risk (D5/§5) bites.
 - **Oracle arm v2 (corrected):** add an "oracle timing" hook — enable the timing-WL term with `timing_pin_weight`/`net_weight` set from the baseline's routed criticality (no GPUTimer STA needed) → Xplace re-place → back-end → compare post-route TNS vs the −60.1 baseline at matched GR-WL. Codex-review the hook (it IS the thesis injection mechanism) before trusting results.
 - **Substrate de-risked:** Xplace-place → OpenROAD-route round-trip VERIFIED on gcd (above). Foundation for the oracle experiment is in place.
 - **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): scale the verified round-trip to a real/timed design (aes or ariane NanGate45) → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.
