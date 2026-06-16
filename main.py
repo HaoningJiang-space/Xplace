@@ -81,7 +81,8 @@ def get_option():
 
     # placement output
     parser.add_argument('--draw_placement', type=str2bool, default=False, help='draw placement') 
-    parser.add_argument('--write_placement', type=str2bool, default=True, help='write placement result') 
+    parser.add_argument('--write_placement', type=str2bool, default=True, help='write placement result')
+    parser.add_argument('--net_weight_file', type=str, default='', help='oracle per-net weight csv (net,...,weight); overrides data.net_weight for route-aware oracle experiments')
     parser.add_argument('--write_global_placement', type=str2bool, default=False, help='write global placement result') 
     parser.add_argument('--output_dir', type=str, default="output", help='output directory') 
     parser.add_argument('--output_prefix', type=str, default="placement", help='prefix of placement output file') 

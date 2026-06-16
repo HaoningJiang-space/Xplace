@@ -1,6 +1,7 @@
 from utils import *
 from src import *
 from functools import partial
+import os
 
 def get_trunc_node_pos_fn(mov_node_size, data):
     node_pos_lb = mov_node_size / 2 + data.die_ll + 1e-4 
@@ -437,6 +438,32 @@ def run_placement_main_nesterov(args, logger):
     data = data.preprocess()
     logger.info(data)
     logger.info(data.node_type_indices)
+    # Route-aware oracle: override per-net weights from an external csv (net,...,weight).
+    # Last column is the weight; matched to nets by name via data.net_names.
+    if getattr(args, "net_weight_file", "") and os.path.exists(args.net_weight_file):
+        w = {}
+        with open(args.net_weight_file) as _f:
+            header = True
+            for line in _f:
+                parts = line.strip().split(",")
+                if header:
+                    header = False
+                    continue
+                if len(parts) >= 2:
+                    try:
+                        w[parts[0]] = float(parts[-1])
+                    except ValueError:
+                        pass
+        nw = data.net_weight.clone()
+        matched = 0
+        for i, nm in enumerate(data.net_names):
+            if nm in w:
+                nw[i] = w[nm]
+                matched += 1
+        data.net_weight = nw
+        logger.info("Oracle net weights: matched %d/%d nets from %s (weight range %.3f..%.3f)" % (
+            matched, len(data.net_names), args.net_weight_file,
+            float(nw.min()), float(nw.max())))
     # args.num_bin_x = args.num_bin_y = 2 ** math.ceil(math.log2(max(data.die_info).item() // 25))
     get_init_density_map(rawdb, gpdb, data, args, logger)
     data.init_filler()
