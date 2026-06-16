@@ -34,6 +34,8 @@ The cross-session "segfault in `gpdb.setup()`/`preprocess_design_info`" was **no
 **Root cause:** `gcd.json` loaded `NangateOpenCellLibrary.macro.lef` (no tap/fill cells) instead of ORFS's `NangateOpenCellLibrary.macro.mod.lef`, which defines `TAPCELL_X1` + fills. **Fix = use the `.mod.lef`.** After the swap: `gpdb.setup()` completes and **all 20 gpdb tensor accessors return OK** (coreInfo/node/pin/net tensors, hyperedge_info, node2pin, region_info, …). The ORFS NanGate45 DEF/LEF now fully materializes into Xplace's tensor representation.
 **Implication:** the replace-GP harness (Gate B / Exp3) is now viable. Still-true caveats from codex: feed Xplace a *placement-input* DEF (not a routed one) and preserve instance/net names exactly through the round-trip (`Database.cpp:22-33` strips backslashes/spaces). Defense-in-depth TODO: guard `addCellNode` against null `ctype()` so an unresolved master warns instead of segfaulting. io_parser.so on the server is currently the RelWithDebInfo build (functionally identical, has symbols).
 
+**ROUND-TRIP VERIFIED end-to-end (2026-06-17):** `python main.py --custom_json gcd.json --load_from_raw True --detail_placement True` → **Xplace places the gcd NanGate45 design** (GP+LG+DP, HPWL 1.068e4, RC=0) and writes a complete DEF (480 COMPONENTS / 54 PINS / 507 NETS). **OpenROAD reads it back: 480 insts, 0 unplaced, `global_route` OK.** So the full thesis substrate — *Xplace places an ORFS design → OpenROAD routes that placement* — works; names round-trip cleanly (gcd has no escaped names). This is "what global placement does first," verified.
+
 ## R4. Benchmarks available
 - ASAP7 (C3PO-matched, primary): aes (done), ariane133/136 (synthesis-free path), via TILOS MacroPlacement (`/data/ziheng/wzh/MacroPlacement`).
 - NanGate45 (2D breadth): gcd/aes done; Open3DBench (`/data/ziheng/wzh/Open3DBench`) adds ariane/bp_*/swerv/ibex/jpeg gate-level netlists (download in progress).
@@ -57,8 +59,9 @@ codex (adversarial, first-principles) verdict: "pointed right, but D1/D2 are not
 - **Non-incrementality** is earned by Exp 3, not framing (Gate A ≠ Gate B).
 
 ## IN FLIGHT (2026-06-17)
-- **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): Xplace-place a macro-heavy ORFS design → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.
-- Prereq: D1 contract check (Xplace GPUTimer faithfully ingests OpenROAD SPEF; single-corner libs) + D7 unmutated-netlist round-trip.
+- **Substrate de-risked:** Xplace-place → OpenROAD-route round-trip VERIFIED on gcd (above). Foundation for the oracle experiment is in place.
+- **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): scale the verified round-trip to a real/timed design (aes or ariane NanGate45) → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.
+- Prereqs still open: D1 contract check (which timer measures Δ — Xplace GPUTimer vs OpenSTA; single-corner libs) + D7 unmutated-netlist round-trip. Leaning OpenSTA-for-both for the gating eval (authoritative, sidesteps Xplace-SPEF ingestion risk); Xplace timer is for the in-loop gradient later.
 - **ariane133/NanGate45 OpenROAD oracle gate** still routing in background — demoted to tool-independent mechanism cross-check.
 
 ## READING SO FAR
