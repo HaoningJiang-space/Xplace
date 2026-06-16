@@ -24,11 +24,11 @@ thesis-upper-bounding experiment). Decision: if a PERFECT routed-RC predictor ca
 beat route-seed noise on post-route WNS/TNS at matched routed-WL/DRC → **STOP**.
 
 Sub-steps (update as each lands):
-- [x] **OpenROAD back-end harness built + working** (`bridge/xplace_backend.tcl`): Xplace placement DEF → read LEF/lib/SDC → D_place (Steiner) → CTS (BUF_X4, 562 sinks) → detailed placement → route → SPEF → D_route. First run on Xplace-placed aes: **D_place WNS −0.595 / TNS −54.9 ns**; D_route in progress.
-- [ ] Baseline arm post-route TNS (D_route) + DRC + route-seed noise band (re-route N seeds).
-- [ ] Oracle form: net-weight oracle via OpenSTA routed-criticality → Xplace `net_weight` (avoids the Xplace-timer-on-NanGate45 uncertainty); faithful routed-RC injection as a later refinement.
-- [ ] Oracle arm: oracle weights → Xplace re-place → same back-end → post-route TNS.
-- [ ] Verdict: oracle beats baseline beyond seed noise at iso routed-WL/DRC? PROCEED/STOP.
+- [x] Back-end harness (GR-based, fast): Xplace DEF → CTS → global route → GR parasitics → STA. Baseline on Xplace-placed aes: **D_place TNS −54.9 → D_route(GR) TNS −60.1** (routing degrades ~5.2 ns). First post-route-bound gap on an Xplace placement.
+- [x] **Injection-point finding:** plain GP ignores `net_weight`; route-aware force MUST enter via the timing-WL term (`merged_wl_loss_grad_timing`, net_weight+timing_pin_weight). `--net_weight_file` on plain GP = identical placement (confirmed).
+- [ ] **Oracle hook v2:** enable the timing-WL term with timing_pin_weight/net_weight set from baseline routed criticality (no GPUTimer STA) — THIS is the thesis injection mechanism. **Codex-review it before trusting.**
+- [ ] Oracle arm: oracle-driven re-place → back-end → post-route TNS vs −60.1 at matched GR-WL.
+- [ ] Verdict: oracle beats baseline beyond seed noise? PROCEED/STOP.
 
 ## Done (rolling, newest first)
 - 2026-06-17 Substrate verified: Xplace places ORFS NanGate45 (gcd 480, aes 13858) → OpenROAD round-trip route OK.
