@@ -64,7 +64,20 @@ Back-end harness (`research/server/oracle/xplace_backend_gr.tcl`) on Xplace-plac
 - **Architectural finding (changes the oracle implementation):** Xplace's plain-GP wirelength gradient `merged_wl_loss_grad` takes only a binary `net_mask`, **NOT** per-net weights. Per-net weighting lives ONLY in the timing-WL term `merged_wl_loss_grad_timing(net_weight, timing_pin_weight)` (gated on `ps.enable_timing`, driven by the GPUTimer). Confirmed empirically: `--net_weight_file` on plain GP matched 13703/14547 nets but produced an **identical placement** (HPWL 7.445400E+05 unchanged) — the weights were never consumed.
 - **Implication:** the route-aware force (oracle AND the eventual predictor) must enter via the timing-WL term. This is the thesis's true injection point: drive `timing_pin_weight`/`net_weight` from the route-aware model. The oracle = drive them from the TRUE routed criticality, bypassing the GPUTimer's estimated-RC STA. Building this hook = building the actual thesis mechanism.
 
+## R8. Oracle-timing arm — first result (2026-06-17): placement-time gain does NOT survive routing
+Oracle hook (codex-reviewed): static per-pin `timing_pin_weight = scale·crit_n` from the baseline's TRUE routed criticality (the perfect-predictor net-weighting), enabled in the timing-WL term, no real STA. Matched 13703/14547 nets. aes, scale 0.1:
+
+| arm | D_place(Steiner) TNS | D_route(post-GR) TNS | After-DP HPWL |
+|---|---|---|---|
+| baseline (plain Xplace) | −54.9 | **−60.1** | 7.4454e5 |
+| oracle (scale 0.1) | −48.7 | **−63.5** | 7.5149e5 |
+
+**The oracle improved placement-time TNS by +6.2 ns but WORSENED post-route TNS by −3.4 ns.** Sign is correct (pre-route improved → it does pull critical nets tighter), so this is not a bug — it is the thesis's motivating bug made concrete: optimizing *placement-time* timing (even with perfect routed criticality as net-weights) does not transfer to, and here harms, *post-route* timing.
+
+**CAVEATS (do not over-claim — being run down now):** (1) this is the **net-weighting** oracle, NOT the thesis's RC-correction oracle (up-weighting critical nets ≠ correcting their routed delay) — codex's distinction; (2) the oracle criticality is from the *baseline* route → **stale** after re-placing (routing/critical paths shift); (3) **iso-congestion not yet controlled** — tightening may raise congestion→detour→worse routing (the thesis mechanism) OR be an artifact; total wire-cap now added to the back-end to test this; (4) single scale, GR-based coarse timing. **Scale sweep {0,0.1,0.3,1.0} + wire-cap in progress.**
+
 ## IN FLIGHT (2026-06-17)
+- **Scale sweep** characterizing the above (does post-route degrade monotonically as the oracle pulls harder; does wire-cap rise → congestion mechanism).
 - **Oracle arm v2 (corrected):** add an "oracle timing" hook — enable the timing-WL term with `timing_pin_weight`/`net_weight` set from the baseline's routed criticality (no GPUTimer STA needed) → Xplace re-place → back-end → compare post-route TNS vs the −60.1 baseline at matched GR-WL. Codex-review the hook (it IS the thesis injection mechanism) before trusting results.
 - **Substrate de-risked:** Xplace-place → OpenROAD-route round-trip VERIFIED on gcd (above). Foundation for the oracle experiment is in place.
 - **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): scale the verified round-trip to a real/timed design (aes or ariane NanGate45) → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.
