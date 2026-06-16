@@ -27,8 +27,9 @@ Sub-steps (update as each lands):
 - [x] Back-end harness (GR-based, fast): Xplace DEF → CTS → global route → GR parasitics → STA. Baseline on Xplace-placed aes: **D_place TNS −54.9 → D_route(GR) TNS −60.1** (routing degrades ~5.2 ns). First post-route-bound gap on an Xplace placement.
 - [x] **Injection-point finding:** plain GP ignores `net_weight`; route-aware force MUST enter via the timing-WL term (`merged_wl_loss_grad_timing`, net_weight+timing_pin_weight). `--net_weight_file` on plain GP = identical placement (confirmed).
 - [ ] **Oracle hook v2:** enable the timing-WL term with timing_pin_weight/net_weight set from baseline routed criticality (no GPUTimer STA) — THIS is the thesis injection mechanism. **Codex-review it before trusting.**
-- [ ] Oracle arm: oracle-driven re-place → back-end → post-route TNS vs −60.1 at matched GR-WL.
-- [ ] Verdict: oracle beats baseline beyond seed noise? PROCEED/STOP.
+- [x] Oracle arm + scale sweep: **scale 0.3 improves post-route TNS −60.1 → −51.2 (~15%)** at near-iso wire-cap; non-monotonic (sweet spot). Placement-controllable post-route headroom EXISTS (Gate-B-positive signal).
+- [ ] **Decisive isolation:** ESTIMATED-criticality (Steiner/D_place slacks) vs ROUTED-criticality (oracle) weights at matched scale/WL. Does route-awareness beat estimated? = the thesis claim.
+- [ ] Then: faithful RC-correction oracle; multi-design; iso-congestion control.
 
 ## Done (rolling, newest first)
 - 2026-06-17 Substrate verified: Xplace places ORFS NanGate45 (gcd 480, aes 13858) → OpenROAD round-trip route OK.
