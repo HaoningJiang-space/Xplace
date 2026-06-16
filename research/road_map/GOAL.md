@@ -24,11 +24,10 @@ thesis-upper-bounding experiment). Decision: if a PERFECT routed-RC predictor ca
 beat route-seed noise on post-route WNS/TNS at matched routed-WL/DRC → **STOP**.
 
 Sub-steps (update as each lands):
-- [ ] Determine the faithful oracle form: can Xplace GPUTimer time NanGate45 (single-corner)?
-      → if yes, inject routed RC via `update_rc_spef`; if no, net-weight oracle (OpenSTA→Xplace net_weight).
-- [ ] OpenROAD back-end harness: Xplace placement DEF → CTS + route → SPEF → OpenSTA WNS/TNS (D7: freeze netlist; D1: one timer).
-- [ ] Baseline arm (Xplace-Timing) post-route TNS + route-seed noise band.
-- [ ] Oracle arm (inject actual routed-RC residual) → re-place → re-route same seed → post-route TNS.
+- [x] **OpenROAD back-end harness built + working** (`bridge/xplace_backend.tcl`): Xplace placement DEF → read LEF/lib/SDC → D_place (Steiner) → CTS (BUF_X4, 562 sinks) → detailed placement → route → SPEF → D_route. First run on Xplace-placed aes: **D_place WNS −0.595 / TNS −54.9 ns**; D_route in progress.
+- [ ] Baseline arm post-route TNS (D_route) + DRC + route-seed noise band (re-route N seeds).
+- [ ] Oracle form: net-weight oracle via OpenSTA routed-criticality → Xplace `net_weight` (avoids the Xplace-timer-on-NanGate45 uncertainty); faithful routed-RC injection as a later refinement.
+- [ ] Oracle arm: oracle weights → Xplace re-place → same back-end → post-route TNS.
 - [ ] Verdict: oracle beats baseline beyond seed noise at iso routed-WL/DRC? PROCEED/STOP.
 
 ## Done (rolling, newest first)
