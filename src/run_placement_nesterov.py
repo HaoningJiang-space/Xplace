@@ -166,6 +166,11 @@ def global_placement_main(gpdb, rawdb, ps: ParamScheduler, data: PlaceData, args
             if iteration % args.timing_freq == 0:
                 gputimer.step(ps, node_pos, data)
 
+        # Route-aware ORACLE: enable the timing-WL term with the STATIC oracle
+        # timing_pin_weight after warmup. No STA / no gputimer.step (weights are fixed).
+        elif getattr(args, "_oracle_timing", False) and iteration > args.timing_start_iter:
+            ps.enable_timing = True
+
         if ps.need_to_early_stop():
             terminate_signal = True
             log_info = True
@@ -342,7 +347,7 @@ def global_placement_main(gpdb, rawdb, ps: ParamScheduler, data: PlaceData, args
                     ps.wa_coeff,
                 )
             )
-            if ps.enable_timing:
+            if ps.enable_timing and args.timing_opt:
                 log_str += " | early WNS/TNS: %.4f %.4f (ns) | late WNS/TNS: %.4f %.4f (ns)" % (
                     wns_early, tns_early, wns_late, tns_late
                 )
@@ -394,7 +399,7 @@ def global_placement_main(gpdb, rawdb, ps: ParamScheduler, data: PlaceData, args
             ps.push_gr_sol(gr_metrics, hpwl, overflow, mov_node_pos)
         best_sol_gr = ps.get_best_gr_sol()
         mov_node_pos[mov_lhs:mov_rhs].data.copy_(best_sol_gr[mov_lhs:mov_rhs])
-    if ps.enable_timing and not ps.enable_route:
+    if ps.enable_timing and args.timing_opt and not ps.enable_route:
         best_sol_timing = ps.get_best_timing_sol()
         if best_sol_timing is not None:
             mov_node_pos[mov_lhs:mov_rhs].data.copy_(best_sol_timing[mov_lhs:mov_rhs])
@@ -438,32 +443,44 @@ def run_placement_main_nesterov(args, logger):
     data = data.preprocess()
     logger.info(data)
     logger.info(data.node_type_indices)
-    # Route-aware oracle: override per-net weights from an external csv (net,...,weight).
-    # Last column is the weight; matched to nets by name via data.net_names.
-    if getattr(args, "net_weight_file", "") and os.path.exists(args.net_weight_file):
-        w = {}
-        with open(args.net_weight_file) as _f:
-            header = True
-            for line in _f:
+    # Route-aware ORACLE: build a STATIC per-pin timing_pin_weight from true routed
+    # criticality and attach a stand-in data.gputimer. The timing-WL term
+    # (calculator.py, `if ps.enable_timing`) applies it WITHOUT the real GPUTimer STA.
+    # timing_pin_weight is positive (larger => pull tighter); net_weight is dead in the
+    # CUDA kernel, so the oracle goes through timing_pin_weight only. See FIDELITY.md D8.
+    args._oracle_timing = False
+    if getattr(args, "oracle_timing_file", "") and os.path.exists(args.oracle_timing_file) and not args.timing_opt:
+        import types
+        slack = {}
+        with open(args.oracle_timing_file) as _f:
+            for li, line in enumerate(_f):
                 parts = line.strip().split(",")
-                if header:
-                    header = False
+                if li == 0 or len(parts) < 2:
                     continue
-                if len(parts) >= 2:
-                    try:
-                        w[parts[0]] = float(parts[-1])
-                    except ValueError:
-                        pass
-        nw = data.net_weight.clone()
+                try:
+                    slack[parts[0]] = float(parts[1])
+                except ValueError:
+                    pass
+        max_neg = 0.0
+        for s in slack.values():
+            if -s > max_neg:
+                max_neg = -s
+        if max_neg <= 0:
+            max_neg = 1.0
+        net_crit = torch.zeros(data.num_nets, dtype=torch.float32, device=data.device)
         matched = 0
         for i, nm in enumerate(data.net_names):
-            if nm in w:
-                nw[i] = w[nm]
+            if nm in slack:
+                v = max(0.0, -slack[nm]) / max_neg
+                net_crit[i] = 1.0 if v > 1.0 else v
                 matched += 1
-        data.net_weight = nw
-        logger.info("Oracle net weights: matched %d/%d nets from %s (weight range %.3f..%.3f)" % (
-            matched, len(data.net_names), args.net_weight_file,
-            float(nw.min()), float(nw.max())))
+        scale = float(args.oracle_timing_scale)
+        tpw = (scale * net_crit[data.pin_id2net_id.long()]).to(torch.float32)
+        data.gputimer = types.SimpleNamespace(timing_pin_weight=tpw)
+        args._oracle_timing = True
+        logger.info("Oracle timing_pin_weight: matched %d/%d nets, max_neg=%.4f ns, scale=%.3f, pins>0=%d, tpw[min..max]=%.4f..%.4f" % (
+            matched, len(data.net_names), max_neg, scale, int((tpw > 0).sum()),
+            float(tpw.min()), float(tpw.max())))
     # args.num_bin_x = args.num_bin_y = 2 ** math.ceil(math.log2(max(data.die_info).item() // 25))
     get_init_density_map(rawdb, gpdb, data, args, logger)
     data.init_filler()
