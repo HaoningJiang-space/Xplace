@@ -1,0 +1,9 @@
+{
+  "benchmark": "test",
+  "design_name": "gcd",
+  "lefs": [
+    "/data/ziheng/wzh/orfs/OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.tech.lef",
+    "/data/ziheng/wzh/orfs/OpenROAD-flow-scripts/flow/platforms/nangate45/lef/NangateOpenCellLibrary.macro.mod.lef"
+  ],
+  "def": "/data/ziheng/wzh/bridge/gcd_place.def"
+}
