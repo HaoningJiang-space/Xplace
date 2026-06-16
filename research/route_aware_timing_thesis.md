@@ -112,6 +112,26 @@ This engine gates BOTH training data and the post-route eval baseline. Experimen
 5. Ablations: −detour, −residual_path, −gap_meter, RUDY-only, direct black-box timing.
 6. Frame as a unified model, not feature engineering.
 
+## Substrate & fidelity (revised 2026-06-17)
+
+The Exp-1 plan assumed Xplace+CU-GR/GGR on ICCAD2015 superblue. **Corrected:**
+GGR segfaults on the ICCAD2015 LEF (timing-oriented, no routing grid) — superblue
+is *timed-but-unroutable*; ISPD is *routable-but-untimed*; only NanGate45/ASAP7
+(ORFS) is both. Since `D_route` needs real routing, the gate substrate is now
+**Xplace-place + OpenROAD-route on NanGate45/ASAP7** (Xplace places an ORFS design
+via the unblocked Xplace↔ORFS bridge → OpenROAD routes → routed SPEF). Xplace stays
+the placer (the goal is a better global placer), and the PDK is routable +
+C3PO-aligned.
+
+This makes **fidelity (不要失真)** the governing discipline — see
+`research/road_map/FIDELITY.md`. The six distortion sources and their rules: D1
+same-timer Δ (vary only parasitics, not the STA engine), D2 anti-gamed gradient
+(physically-mediated + placement-controllable component only + router
+recalibration), D3 criticality-gated, D4 overflow-scheduled (respect the cold
+center-init start), D5 bounded additive (don't break WL/density), D6 measure on
+Xplace's own output. The contribution is this fidelity-preserving coupling, not a
+new timing term.
+
 ## Environment (moe-server, built & verified)
 
 `/data/ziheng/wzh/xplace_dac/Xplace`, env `/data/ziheng/wzh/conda_envs/xplace`
