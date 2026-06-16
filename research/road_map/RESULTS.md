@@ -49,9 +49,17 @@ Re-grounded on `route_aware_timing_thesis.md` + `exp1_detour_timing_gap.md`: the
 - **Decision (user-confirmed):** **Xplace-place + OpenROAD-route on NanGate45/ASAP7.** Xplace places an ORFS design via the now-unblocked bridge → OpenROAD routes that Xplace placement → routed SPEF → `D_place` vs `D_route`. Keeps Xplace as the placer (the goal), gives a routable + C3PO-aligned PDK.
 - **Fidelity guardrails for this substrate** → `research/road_map/FIDELITY.md` (六 distortion sources; centerpiece = D1 same-timer Δ, D2 anti-gamed controllable-only gradient with router recalibration).
 
+## R6. codex review of FIDELITY.md (2026-06-17) — integrated
+codex (adversarial, first-principles) verdict: "pointed right, but D1/D2 are not yet contracts." Integrated into FIDELITY.md:
+- **Two missing distortions added:** D7 **flow-mutation** (routing adds CTS/resize/fill → Δ not pure parasitic — exactly the ariane GR netlist-mismatch trap) and D8 **gradient-reality** (accurate Z ≠ useful ∇Z; router response is discontinuous → finite-difference-validate the FORCE, not just the value). Plus D9 arc-key uniqueness.
+- **D1 hardened to a contract:** SPEF round-trip must pass 100% net/pin match + ~100% nonzero RC (unmatched→zero-RC fakes a better D_route) + unit sanity + coupling policy + Xplace-timer↔OpenSTA agreement on fixed parasitics.
+- **D2b controllability redefined:** CV≈0 only proves determinism, NOT controllability. Need across-placement variance ≫ route-seed variance + finite-difference sensitivity.
+- **Non-incrementality** is earned by Exp 3, not framing (Gate A ≠ Gate B).
+
 ## IN FLIGHT (2026-06-17)
-- **Exp 1 on the chosen substrate**: verify Xplace GPUTimer handles NanGate45/ASAP7 libs (single-corner vs ICCAD early/late), then Xplace-place an ORFS design → OpenROAD route → SPEF → Δ(detour, ĉ, slack) → PROCEED/PIVOT.
-- **ariane133/NanGate45 OpenROAD oracle gate** still running in background — demoted to tool-independent mechanism cross-check (NOT the main gate).
+- **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): Xplace-place a macro-heavy ORFS design → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.
+- Prereq: D1 contract check (Xplace GPUTimer faithfully ingests OpenROAD SPEF; single-corner libs) + D7 unmutated-netlist round-trip.
+- **ariane133/NanGate45 OpenROAD oracle gate** still routing in background — demoted to tool-independent mechanism cross-check.
 
 ## READING SO FAR
 Gate A + placement-controllability look **positive on aes (std-cell)**; the thesis stands or falls on (1) the same holding — ideally STRONGER — on the **macro/congested** design with seed-causality intact, and (2) Gate B utility (needs the bridge). No SOTA/win claim yet; this is mechanism+causality evidence, not the placement-improvement result.

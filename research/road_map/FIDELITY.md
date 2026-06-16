@@ -18,9 +18,21 @@ OpenROAD routes it):
 > **Rule:** ONE STA engine, identical libs/SDC/delay model. The *only* thing that
 > differs between `D_place` and `D_route` is the parasitic source — estimated
 > FLUTE/Steiner RC vs the routed SPEF. Prefer feeding the routed SPEF into the
-> **Xplace GPUTimer** (`update_rc_spef`, confirmed to exist) so D_place and
-> D_route share the timer the placer's gradient will use; cross-check once
-> against OpenSTA on a fixed-parasitics case to bound timer disagreement.
+> **Xplace GPUTimer** (`update_rc_spef`) so D_place and D_route share the timer
+> the placer's gradient will use.
+> **"Exists" ≠ "faithfully ingests" — D1 is a CONTRACT, not a hook.** Before any Δ
+> is trusted, pass a hard check on the OpenROAD→Xplace SPEF path: (1) **100%
+> net/pin name round-trip** — Xplace pins are `inst:pin` (`GPDatabase.cpp:119`),
+> SPEF uses different delimiters and Xplace strips backslashes/spaces
+> (`Database.cpp:22`), which can silently *collide* names; (2) **nonzero-RC
+> coverage** — unmatched SPEF nets are skipped then assigned ZERO RC with only a
+> warning (`rctree.cpp:453`), which fakes a *better* D_route; assert ~100% nets
+> get nonzero routed RC; (3) **unit sanity** — the SPEF unit parser matches exact
+> strings (`spef.cpp:26`); confirm FF/PF/OHM headers; (4) **coupling policy** —
+> `update_rc_spef` appears to add only ground caps, ignoring coupling
+> (`rctree.cpp:430`); decide and document; (5) **fixed-parasitics agreement** —
+> Xplace-timer vs OpenSTA must agree on the SAME parasitics before either is
+> trusted. Until this passes, Δ is confounded by the timer, not the routing.
 
 ## D2. Surrogate exploitability — the gradient must point at PHYSICAL improvement
 The differentiable route-aware surrogate predicts routing-induced parasitic
@@ -32,11 +44,16 @@ the optimizer reduces *predicted* timing by moving cells in ways that shrink Z's
 >     delay`, never a black-box `net → delay` map — a physically-mediated
 >     gradient points toward real reductions.
 > (b) **Only the placement-CONTROLLABLE component of Z enters the gradient.**
->     Decompose Z into a placement-determined part and a router-lottery part;
->     gate the force on the controllable part. The empirical license for this is
->     the seed-causality test (re-route a fixed placement with N seeds → routed
->     RC CV≈0 ⇒ the component IS a deterministic function of placement; measured
->     CV 0% on aes/ibex — must re-confirm on the macro/congested design).
+>     Operational definition (NOT the weak CV test): write
+>     `Z(x, seed) = E_seed[Z | x] + noise`. Seed-causality CV≈0 only bounds
+>     `noise` (determinism) — it does NOT prove `∂E[Z|x]/∂x` is large, smooth, or
+>     useful. A detour deterministically forced around fixed macro pins is
+>     CV≈0 yet *uncontrollable* by standard-cell motion. **Controllability test:
+>     (i) variance of `E_seed[Z|x]` ACROSS placements must dominate route-seed
+>     variance, and (ii) finite-difference sensitivity — perturb placement along
+>     the proposed force, re-route with the SAME flow/seed, and confirm real
+>     routed STA actually moves the predicted way.** Only the component passing
+>     both enters the gradient.
 > (c) **Online recalibration** against the true router every K iterations (mirror
 >     Xplace's `update_timing_calibrated`): re-route, compare surrogate Z̃ to the
 >     router's actual response, correct the surrogate before drift accumulates.
@@ -77,6 +94,54 @@ as tool-independent premise validation.)
 > PDK — since the timed-but-unroutable ICCAD2015 (GGR segfaults on its LEF) and
 > the routable-but-untimed ISPD are each insufficient alone.
 
+## D7. Flow-mutation distortion — routing must not mutate the netlist/state
+(codex-found.) D1 ("vary only parasitics") is insufficient if the routing flow
+*also* changes the design between `D_place` and `D_route`: CTS buffers, gate
+resizing, tie/filler/antenna insertion, route/timing repair, clock propagation,
+detailed-placement movement. Then `Δ` mixes parasitic distortion with netlist
+mutation — exactly the trap the ariane GR-residual attempt hit (1_placed had no
+CTS, 3_groute did → 114890 vs 117169 nets, join corrupted).
+> **Rule:** freeze the netlist across the Δ measurement. Take `D_place` on the
+> **same post-CTS, post-resize netlist** that is then routed, so the only delta is
+> estimated-RC → routed-SPEF. Any cell the router adds/resizes after the D_place
+> snapshot invalidates that net's Δ — drop it or re-snapshot. Report the fraction
+> of arcs surviving an unmutated round-trip.
+
+## D8. Gradient-reality distortion — accurate Z does not imply useful ∇Z
+(codex-found, the deepest one for a *placer*.) The router's response is
+discontinuous in placement (a net flips to a different track/layer/detour). A
+surrogate can predict `Z` values accurately yet have a `∇Z` that points nowhere
+real — the placer would chase a smooth gradient across a step function.
+> **Rule:** validate the GRADIENT, not just the value. Finite-difference check:
+> perturb the placement along the proposed route-aware force, re-route with the
+> same flow/seed, and confirm the *real* routed STA improved in the predicted
+> direction and magnitude. A force that fails this is distortion regardless of how
+> well `Z` is fit. This is promoted to a first-class fidelity rule (was only a
+> ROADMAP §14 footnote).
+
+## D9. Arc-identity distortion — the supervised target must have unique keys
+(codex-found.) The thesis predicts per driver→sink arc. If `(net, driver, sink)`
+keys are non-unique, the label set is corrupted at the source (the ariane GR join
+blew 340k arcs → 492k via many-to-many — `RESULTS.md` R2b).
+> **Rule:** enforce unique arc keys; deduplicate/disambiguate multi-driver and
+> repeated-pin cases before any correlation or training. Non-unique keys are a
+> data-integrity bug, not a nuisance.
+
+---
+
+## THE GATING EXPERIMENT (do this before building any predictor)
+codex's cheapest falsifier, and it upper-bounds the entire thesis: a
+**true-residual oracle placement**. Take a real Xplace placement on one
+macro-heavy ORFS design; inject the *actual* routed-RC residual from the SPEF as
+if the predictor were **perfect**; run a short late-stage placement update along
+that oracle force; re-route with the SAME flow/seed; compare post-route WNS/TNS
+against Xplace-Timing and a C3PO-style/RUDY baseline **at matched routed-WL/DRC**.
+> If even a PERFECT predictor cannot beat route-seed noise at iso-congestion,
+> **STOP** — no learnable surrogate can rescue it (this is the D5/§5 physical
+> risk: the placement-controllable parasitic delta may be dominated by
+> cell/slew/buffering/CTS/macro-pin-access/path-migration). Gate A (residual
+> exists) is NOT Gate B (placement utility); this experiment is the bridge.
+
 ---
 
 ## Why this is a contribution, not feature engineering
@@ -91,9 +156,22 @@ congestion and post-route timing* — and it makes a global placer that closes
 post-route timing a congestion-blind timing-driven placer cannot.
 
 ## Falsifiable checks (each rule has a test)
-- D1: D_place(Xplace timer, est RC) vs D_place(OpenSTA, est RC) agree within ε.
-- D2b: seed CV of routed RC ≈ 0 on the macro/congested design (controllability).
+- D1: 100% net/pin SPEF round-trip + ~100% nonzero routed RC + unit sanity +
+  Xplace-timer vs OpenSTA agree within ε on fixed parasitics. (Contract, not hook.)
+- D2b: across-placement variance of E_seed[Z|x] ≫ route-seed variance, AND
+  finite-difference: perturb→re-route→real routed STA moves as predicted.
 - D2c: surrogate Z̃ vs router Z error stays bounded across recalibration steps.
 - D3: removing criticality weighting degrades post-route TNS (ablation).
 - D4: applying the force from iter 0 degrades HPWL/overflow vs scheduled entry.
 - D5: routed-WL/overflow/DRC not worse than Xplace-Timing at the reported WNS/TNS.
+- D7: report fraction of arcs surviving an unmutated (no CTS/resize) round-trip.
+- D8: finite-difference gradient-reality holds (perturb along force → routed STA).
+- D9: arc keys unique; dedup before any correlation/training.
+
+## Non-incrementality is earned by Exp 3, not by framing (codex point 4)
+Until the **oracle gating experiment** passes AND the learned controllable
+residual yields a route-verified placement gradient that beats matched
+Steiner-RC / global-route-RC / RUDY / C3PO-style baselines at iso routed-WL/DRC,
+a reviewer correctly reads this as "C3PO + a learned routed-RC estimator." The
+"parasitic-distortion mediator" is terminology until Exp 3 shows route-verified
+placement utility. **Gate A (residual exists) ≠ Gate B (placement utility).**
