@@ -75,6 +75,24 @@ nets that the placer cannot shorten, adding congestion. This is a real, somewhat
 publishable finding: **naive route-aware timing-driven placement is counterproductive; route-
 awareness must drive the routability/spreading lever, not the wirelength-pull.**
 
+## R17 — STEP-2 (lever fix attempt 1): cell-inflation lever did NOT engage
+`--timing_opt --use_cell_inflate` on ariane → post-route TNS −2939 (worse than timing-only
+−2600, wire-cap 540069). BUT the log shows the lever **barely engaged**: "Too small relative
+area increment (0.0009<0.01). Early terminate cell inflation" + `route_weight=0`. Reason:
+**ariane is only 38% cell-utilization** — its congestion is **macro-routing congestion (detour
+around 132 FIXED macros), not cell-DENSITY congestion**, which is what `--use_cell_inflate`
+(bin-density-driven) responds to. So this lever is the wrong match for macro-detour; it didn't
+spread the macro corridors. Inconclusive for the dual-lever hypothesis.
+**Emerging concern (the harder question):** with macros FIXED, how much of the macro-detour
+delay is *placement-controllable* by std-cell motion at all? If the detour is structurally set
+by fixed-macro blockages, neither lever (timing-pull nor cell-inflation) can reduce it much →
+plain `--timing_opt` (−2600) is near the controllable optimum → the thesis value would live on
+designs where detour is CELL-congestion-induced (spreadable) + timing-critical, not fixed-macro.
+**Next precise test:** `--use_route_force` with nonzero `route_weight`/`congest_weight` (GGR-
+congestion spreading force, which DOES see macro-routing congestion) — the proper routability
+lever for this congestion type. If even that can't beat −2600, the macro-detour is likely not
+placement-controllable (D5/§5 physical risk) and the thesis must target cell-congested designs.
+
 ## Falsifiable tests to confirm the ranking
 1. **Isolate C2:** re-derive the multiplier from the corrected placement's OWN route (iterate
    place→route→re-mult→re-place). If still worse → C1 dominates (mechanism issue, not staleness).
