@@ -68,6 +68,16 @@ def calc_obj_and_grad(
                 data.node2pin_list, data.node2pin_list_end, data.hyperedge_list, data.hyperedge_list_end,
                 data.net_mask, data.net_weight, data.hpwl_scale, ps.wa_coeff, args.deterministic
             )
+            # R25 fix: AUTO-CALIBRATE the timing force to a design-invariant fraction of the WL
+            # gradient norm. A fixed --oracle_timing_scale over-pulls on some designs (swerv: HPWL
+            # +38%, TNS worse than no-timing). Rescaling to ||timing||=frac*||wl|| each iter keeps the
+            # per-pin criticality RANKING but makes the global scale design-invariant (frozen rule).
+            tfrac = getattr(args, "timing_force_frac", 0.0)
+            if tfrac > 0:
+                wl_n = conn_node_grad_by_wl[mov_lhs:mov_rhs].norm()
+                tm_n = conn_node_grad_by_timing[mov_lhs:mov_rhs].norm()
+                if tm_n > 0:
+                    conn_node_grad_by_timing = conn_node_grad_by_timing * (tfrac * wl_n / tm_n)
             mov_node_pos.grad[mov_lhs:mov_rhs] += conn_node_grad_by_timing[mov_lhs:mov_rhs]
             wl_loss += wl_loss_timing
             
