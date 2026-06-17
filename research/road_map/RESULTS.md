@@ -293,3 +293,21 @@ robust route-aware method is NOT "replace est with routed" (R21 fails) but "UNIO
 criticality" (complementary information). This generalizes across the divergence axis (high ariane /
 low bp_fe). First robust, multi-design positive. (raw min-slack blend failed — must normalize per
 timer before union, else dominated by the more-pessimistic timer's scale.)
+
+## R24 — codex adversarial review (gpt-5.5 xhigh): 3 fatal flaws (goal #2)
+1. **Baseline collapse**: bp_fe +32% dead (timing-vs-notiming); ariane shrank to 3-8% force-matched;
+   weak vs Efficient-TDP (DATE'25 pin2pin path-level). FIX: locked matrix {no-timing, Xplace
+   timing_opt, Efficient-TDP-style pin2pin-est, C3PO/RUDY, prev-routed, est∪routed blend} on ≥3
+   designs, same budget, ≥5 place × 3 route seeds, iso-congestion. Beat the STRONGEST est/C3PO baseline or reject.
+2. **Fixed-point not novel + best-of-trajectory cherry-picking**: place→route→reweight = iterative
+   timing closure; reporting best iter k2 (k3/k4 regress) = eval leakage. FIX: predeclare/FREEZE K,
+   damping, stopping rule on training designs; report LOCKED final on held-out, not best-of-traj.
+   (NOTE: R23 single-shot union is already a fixed 1-iter rule, not best-of-traj — must state this.)
+3. **★ Timing fidelity may be an artifact (deepest)**: post-route TNS = GR parasitics (no coupling,
+   no detailed route); est timer marked 117k critical vs 13k routed (Steiner-M3 pessimism) → could
+   MANUFACTURE the divergence/Jaccard story. FIX: rerun the SELECTED placements through detailed
+   route + OpenRCX SPEF (coupling) + fairly recalibrated est timer; recompute Jaccard/WNS/TNS/Fmax/DRC.
+   If divergence/gains vanish → just exploiting a bad estimated timer.
+   PARTIAL DEFENSE: R22's divergence (0.24/0.94) used OpenROAD `estimate_parasitics -placement` (a
+   PROPER est timer), NOT the old Steiner-M3 (R10's 0.003). So R22 ≠ the bad-timer artifact. But the
+   detailed-route+coupling fidelity gap is REAL and unaddressed → resolving flaw 3 = the make-or-break.
