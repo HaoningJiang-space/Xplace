@@ -86,3 +86,30 @@ ariane, oracle routed criticality fixed (scale 1.0), arc-level detour added:
 2. **Force-matched re-test** (rescale so ‖timing+detour‖ = ‖timing‖) to remove the over-pull confound.
 3. **High-detour design** hunt — ariane is low-detour (R18); the detour lever can only be fairly
    tested where detour is a large TNS fraction.
+
+## 8. CONFOUND RESOLVED (matched-HPWL small-weight sweep) — conclusion REVISED
+The §6 "monotonic regression" was dominated by OVER-PULL (force not matched). Small-weight sweep at
+≈baseline HPWL:
+| arm | HPWL | dplace_TNS | droute_TNS |
+|---|---|---|---|
+| base | 2.4455e7 | −206126 | −2400.98 |
+| arc w=0.002 | 2.4522e7 (+0.27%) | −182857 (better) | **−2368.1 (better, +1.4%)** |
+| arc w=0.005 | 2.4424e7 (−0.13%) | −214140 (worse) | −2469.3 (worse) |
+
+- **Direction NOT falsified.** At matched HPWL (w=0.002) the arc-detour term improves BOTH placement-
+  stage AND post-route TNS (−2368 vs −2401, +1.4%). The earlier regression was over-pull, not wrong
+  direction. The confound mattered — resolving it flipped the conclusion (GOAL #13: don't leave confounds).
+- **But the effect is SMALL and weight-sensitive** (w=0.005 is worse on both metrics → likely within
+  single-seed noise). Consistent with the pre-registration: detour is ~4% of ariane TNS (R18), so even
+  a correct detour force can only move post-route TNS marginally here.
+- **Honest status:** marginal positive, NOT yet robust (needs multi-seed to rule out noise; non-monotonic).
+- **IFT implication (revised):** the detour direction is plausibly correct → IFT (its exact form) is NOT
+  dead. But ariane's headroom is too small to justify the IFT build on its own. Gate IFT on a HIGH-detour
+  design showing a LARGE, robust detour effect.
+
+## 9. NEXT (revised)
+1. **Multi-seed at w≈0.002** (3 seeds) — is the +1.4% real or noise? (cheap, decides if there's any signal).
+2. **Finer weight bracket** (0.001, 0.002, 0.003) at matched HPWL — find the sweet spot / confirm shape.
+3. **HIGH-detour design** (the real test, DETOUR_EXPERIMENT §7.3) — only there can the detour lever show
+   strong headroom; ariane is structurally low-detour.
+4. Tier-1 proxy correlation still wanted (needs per-net routed length dump — add to backend tcl).
