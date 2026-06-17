@@ -50,3 +50,22 @@ the net-weighting positive** → net-weighting (+20%) is the headline, TERM-2 is
 companion (with this per-bin-vs-per-node + effect-size analysis as the contribution). To pursue a
 POSITIVE TERM-2 (#12 SOTA), v1 must be tested on a design where critical-corridor detour is a LARGE
 TNS fraction (the substrate search remains open).
+
+## ★ CRITICAL HONESTY (user's objection, 2026-06-17): the +20% is an ORACLE, not a method
+The +20% "positive" feeds ROUTED criticality (obtained by routing the design FIRST) back into
+placement. At real placement time you have NOT routed yet → **this is circular / future-peeking,
+NOT deployable.** Worse, it is not even a self-consistent oracle: the routed criticality came from
+a REFERENCE placement P0's route, but it produced a DIFFERENT placement P1 whose route (and true
+criticality) differs — a moving-target/fixed-point gap.
+
+What the oracle study legitimately establishes (and ONLY this):
+- The PRIZE is real: routed criticality carries placement-actionable info that pre-route estimation
+  misses (R10 Jaccard 0.003), worth ~+20% post-route TNS. It justifies building a predictor.
+- It does NOT establish a method. There is currently **NO deployable positive result.**
+
+The only honest paths to a real positive (no routing-first cheat):
+- (A) iterate place→route→re-weight→re-place to a fixed point (cheap routing in the loop, self-consistent);
+- (B) predict routed criticality from pre-route features (no routing at deploy).
+The differentiable unification (UNIFICATION.md) = (A)+(B) elegantly: a DIFFERENTIABLE router inside
+the GP loop supplies routed criticality online & cheaply (≈ the fixed point) and is differentiable
+(joint ∂Ψ/∂x), removing the "route-first" circularity. The oracle +20% is its CEILING/target, nothing more.
