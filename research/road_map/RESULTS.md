@@ -311,3 +311,19 @@ timer before union, else dominated by the more-pessimistic timer's scale.)
    PARTIAL DEFENSE: R22's divergence (0.24/0.94) used OpenROAD `estimate_parasitics -placement` (a
    PROPER est timer), NOT the old Steiner-M3 (R10's 0.003). So R22 ≠ the bad-timer artifact. But the
    detailed-route+coupling fidelity gap is REAL and unaddressed → resolving flaw 3 = the make-or-break.
+
+## R25 — ★ swerv (3rd design) HONEST: frozen scale=1.0 OVER-PULLS (codex flaw-2 confirmed on held-out)
+swerv_wrapper (NanGate45, large, TNS scale ~−1.6M ns — much bigger than ariane −2.4k / bp_fe −63k):
+| arm | post-route TNS | HPWL |
+|---|---|---|
+| sw_cold (no timing) | −1600442 | 1.375E7 |
+| sw_est (est, scale 1.0) | −1668072 (WORSE than cold) | 1.894E7 (+38%!) |
+| sw_routed, sw_union | (running) |
+The FROZEN hyperparameters (scale=1.0, K=13000) from ariane/bp_fe **over-pull on swerv**: the timing
+net-weight force inflated HPWL +38% → post-route TNS WORSE than no-timing. This is exactly codex
+flaw-2 (a frozen rule must transfer to held-out designs — it does NOT here). Root cause: `--oracle_timing_file`
+uses a FIXED scale, no auto-calibration; swerv's criticality magnitude/distribution differs → scale 1.0
+is mis-calibrated. **FIX (robust): auto-calibrate the timing-force scale to the WL/density gradient
+magnitude per design** (as Xplace auto-normalizes route_weight: init = density_grad.max/route_grad.max),
+so the frozen RULE is "timing force = fixed FRACTION of WL force", design-invariant. Re-run swerv with
+auto-calibrated scale. Honest: route-awareness is moot until the actuation scale generalizes.
