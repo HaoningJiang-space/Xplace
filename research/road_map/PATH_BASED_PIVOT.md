@@ -55,11 +55,13 @@ HOW the pin-pairs are budgeted (LoRe) — not a per-net scalar weight.
 - **Caveat**: Efficient-TDP targets ICCAD2015 (timed, not routable → post-route eval needs the
   benchmark-fork fix). Decide eval substrate (Open3DBench DEFs / a routable timed flow).
 
+## Infra state (2026-06-17)
+- Re-cloned clean canonical `lamda-bbo/Efficient-TDP` locally (cc1d405); haoning remote kept (LoRe safe on remote: `dda4de4` + tags).
+- Server `/data/ziheng/wzh/Efficient-TDP-dev` IS built (`build/.../timing_cpp.so` etc.) but the `.so` are **cpython-310 + torch≥2.1**, and **NO available conda env matches**: `xplace`=py3.10+torch2.0.1 (finds the .so but `undefined symbol init_is_contiguous`), `dfv3`/`mxmoe`=torch2.6 but not py3.10 (can't load cpython-310 .so). → **running Efficient-TDP needs a clean rebuild against a pinned env.**
+
 ## Next steps
-1. Understand LoRe precisely (`timing_cpp.cpp` update_net_weights pin2pin+lore path;
-   `experiments/timing_objective_lab.py`) — what "dynamic_lore" budgets, and where routed
-   info would enter.
-2. Build Efficient-TDP; reproduce its pin2pin TDP on superblue1 (sanity).
-3. Inject route-aware ARC RC-correction into the path extraction; compare vs vanilla
-   Efficient-TDP (the fair path-based baseline), post-route, force/seed-matched.
-4. codex-review the design + the LoRe extension before trusting results.
+1. **Rebuild Efficient-TDP against a pinned env** (the gating infra step): either build the clean canonical against the proven `xplace` env (py3.10, torch2.0.1+cu117 — IF the code compiles against 2.0.1), or create a py3.10+torch≥2.1 env. Then reproduce pin2pin on superblue1 (sanity).
+2. Understand LoRe precisely (`timing_cpp.cpp` update_net_weights pin2pin path; `experiments/timing_objective_lab.py`) — but as REFERENCE only (don't build on the modified LoRe).
+3. Inject route-aware ARC RC-correction into the path-extraction TIMING (pin2pin force held fixed); compare Efficient-TDP(estimated) vs Efficient-TDP(route-corrected), post-route, force/seed-matched.
+4. codex-review the injection before trusting results.
+5. Substrate for post-route eval: Open3DBench DEFs (routable) — ICCAD2015 is timed-not-routable.
