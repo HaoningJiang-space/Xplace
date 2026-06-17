@@ -41,6 +41,16 @@ the structured direction where it lies, gated to where it is controllable.** Gen
 timing weighting (even with a perfect criticality *ranking*) cannot do this when the
 ranking itself is what's wrong — which is the congested case (R10).
 
+**R23 refinement (supersedes "routed is truth where they disagree"):** the sharpest
+form is not "switch to the routed ranking where est and routed diverge." Both rankings
+are *incomplete*: est and routed each miss a *different* subset of the truly-critical
+nets, so neither alone is f_true's criticality. The correct object is their **UNION**
+(`crit = max(est_norm, routed_norm)`, top-K): it recovers what either view is blind to.
+This is why union **beats pure-routed and even the routed oracle** on ariane (−2390.6 vs
+−2421/−2401) yet is **harmless on low-divergence bp_fe** (−62045, no pure-routed
+regression). The divergence law (R22) still says *how much* headroom exists; union says
+*how to claim it without betting on either timer being right*. See CURRENT SYNTHESIS.
+
 ## 3. High-level abstraction → borrow from other fields
 This is an instance of **surrogate optimization with a biased model + learned bias
 correction** — the same structure as:
@@ -128,3 +138,13 @@ Concretely, two timers see the criticality differently:
 This is the system: **place against the UNION of estimated and routed criticality rankings, refreshed
 online, actuated by a path/pin2pin timing force** — route-aware where it matters (high divergence),
 harmless where it doesn't (low divergence), no oracle.
+
+## CRITICALITY-SOURCE has TWO improvement axes (from IMPLICIT_DIFF_TIMING.md / codex)
+The timing force = (criticality κ) × (route-aware ∂T/∂x via IFT). κ itself improves on two axes:
+1. **WHICH nets** (R22/R23): est → UNION(est,routed) → route-aware ranking. Divergence-gated.
+2. **HOW κ is computed** (codex byproduct): κ today = support-truncated HEURISTIC criticality, NOT
+   the exact reverse-mode STA adjoint. Upgrading κ → smoothed EXACT STA adjoint is an independent
+   source-side improvement that the IFT framework (Eq 8: Hμ=∂_pT, ∂_pT=κ·…) naturally requires.
+Both feed the same machinery: ∇F = ∇f + λ_t ∂T/∂x − λ_t Bᵀμ, Hμ=∂_pT (IMPLICIT_DIFF_TIMING.md Eq 8).
+The route-response cross-term −Bᵀμ is the headroom the frozen κ·∂HPWL/∂x drops (generically nonzero,
+large in high-divergence regime). Theory now codex-audited (envelope error corrected, claims tightened).
