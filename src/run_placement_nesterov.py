@@ -475,6 +475,9 @@ def run_placement_main_nesterov(args, logger):
                 net_crit[i] = 1.0 if v > 1.0 else v
                 matched += 1
         scale = float(args.oracle_timing_scale)
+        # TERM-2 prototype: expose the GRADED per-net criticality (before any top-K collapse)
+        # to the timing-weighted route force (calculator.py). Static (oracle) => cache-safe.
+        data.net_criticality = net_crit.clone()
         topk = int(getattr(args, "oracle_topk", 0))
         if topk > 0:
             # FORCE-MATCHED comparison: keep only the top-K most-critical nets, UNIFORM

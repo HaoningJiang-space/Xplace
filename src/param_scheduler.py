@@ -129,6 +129,7 @@ class ParamScheduler:
         self.use_cell_inflate = args.use_cell_inflate
         self.use_route_force = args.use_route_force
         self.route_weight = args.route_weight
+        self.timing_route_weight = getattr(args, "timing_route_weight", 0.0)
         self.congest_weight = args.congest_weight
         self.base_route_weight = args.route_weight
         self.base_congest_weight = args.congest_weight

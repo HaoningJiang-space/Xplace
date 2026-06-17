@@ -39,6 +39,18 @@ def calc_obj_and_grad(
             mov_route_grad, mov_congest_grad, mov_pseudo_grad = route_fn(
                 mov_node_pos, mov_node_size, expand_ratio, constraint_fn
             )
+            # TERM-2 prototype (PROTOTYPE.md): timing-weighted congestion force. Scale the
+            # per-node route (congestion) force by (1+alpha*node_criticality), so timing-critical
+            # cells get pushed out of congestion harder (route-aware DENSITY lever). node_crit =
+            # max over the node's pins of per-net criticality; cached (oracle criticality is static).
+            if getattr(ps, "timing_route_weight", 0.0) > 0 and getattr(data, "net_criticality", None) is not None:
+                if getattr(data, "node_criticality", None) is None:
+                    pin_net_crit = data.net_criticality[data.pin_id2net_id.long()]
+                    nc = torch.zeros(data.num_nodes, device=mov_node_pos.device, dtype=torch.float32)
+                    nc.scatter_reduce_(0, data.pin_id2node_id.long(), pin_net_crit, reduce="amax", include_self=True)
+                    data.node_criticality = nc
+                tw = 1.0 + ps.timing_route_weight * data.node_criticality[mov_lhs:mov_rhs].unsqueeze(1)
+                mov_route_grad[mov_lhs:mov_rhs] = mov_route_grad[mov_lhs:mov_rhs] * tw
             mov_node_pos.grad += mov_route_grad * ps.route_weight
             mov_node_pos.grad += mov_congest_grad * ps.congest_weight
             mov_node_pos.grad += mov_pseudo_grad * ps.pseudo_weight
