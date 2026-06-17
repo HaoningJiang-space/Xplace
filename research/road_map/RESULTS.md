@@ -369,3 +369,24 @@ codex-confirmed first-principles result (IMPLICIT_DIFF_TIMING.md, RELATED_WORK.m
   unit and aligns Level-A with the IFT `∂_pT=Σ_a κ_a∂d_a/∂ℓ_a` — go arc-level the moment Level-A shows signal.
 - **NEXT (server):** run FD self-check; A/B `--detour_timing_weight {0.5,2.0}` × {ariane,bp_fe} under
   frozen auto-cal (frac=0.1); watch post-route TNS at matched HPWL. Signal → arc-level → IFT.
+
+## R27 — ★★ FOUNDATION CHECK (depth-first, goal #13): the ariane divergence is CONFOUNDED by an over-pessimistic est timer (codex flaw-3 largely CONFIRMED)
+Deep analysis of the EXISTING est-vs-routed netslack (no new runs):
+| design | est #neg | est TNS | est WNS | routed #neg | routed TNS | routed WNS | est/routed TNS | Spearman |
+|---|---|---|---|---|---|---|---|---|
+| ariane | **124484 (84.9%)** | −490911 | −20.68 | 14552 (9.9%) | −12547 | −1.27 | **39×** | 0.58 |
+| bp_fe | 16119 (56.9%) | −262985 | −54.68 | 16649 (58.8%) | −300266 | −68.73 | 0.88 | **0.99** |
+**On ariane the ESTIMATED timer (`estimate_parasitics -placement`) is 39× over-pessimistic** — it marks
+85% of nets violating (vs routed 9.9%), WNS −20.7 vs −1.27 ns. This is the R2b layer/RC-model confound:
+`-placement` uses a pessimistic single-layer RC, `-global_routing` uses real (lower-R, higher) layers
+→ the est-vs-routed gap is dominated by the RC MODEL, not routing detour. Spearman 0.58 (rank-invariant
+to the 39× magnitude) shows SOME real reordering, but est's 85%-violating ranking has poor resolution →
+0.58 is entangled with est-noise, not cleanly "routing reorders criticality".
+**Honest implication:** the ariane "+8% route-aware" is substantially "routed criticality is a sharper/
+better-calibrated signal than a BROKEN est timer", NOT proven to be real structural-detour reordering.
+The R22 divergence (Jaccard 0.24) is partly a bad-est-timer artifact. **This MUST be resolved before any
+SOTA claim.** bp_fe is clean (est≈routed, Spearman 0.99) — consistent (its est timer is well-calibrated).
+**DECISIVE NEXT TEST (codex flaw-3 prescription):** recalibrate the est timer to be fair (fix the 39×
+pessimism — match the per-layer/GR RC scale so est WNS ≈ routed-magnitude), then recompute Spearman/
+Jaccard AND the route-aware gain. If the divergence + gain SHRINK toward bp_fe levels → the ariane win
+was a bad-timer artifact (thesis must pivot). If they PERSIST under a fair est → real route-response (thesis holds).
