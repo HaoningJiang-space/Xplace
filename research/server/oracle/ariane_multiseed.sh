@@ -3,18 +3,22 @@
 # routed-criticality net-weighting vs estimated-criticality net-weighting (force-matched,
 # same mechanism, scale 1.0, K=13000), across 3 placement seeds, on ariane (NanGate45).
 # Hardens the +20% fair-isolation positive (ariane_arms_results.txt). GPU 1 (GPU 0 = PPoPP job).
-set -u
+# NOTE: NO `set -u` — conda's orfs ruby_deactivate.sh references unbound ZSH_VERSION and dies under -u.
+# Resumable: skips an (arm,seed) whose backend log already shows BACKEND_DONE.
 source ~/miniconda3/etc/profile.d/conda.sh
 B=/data/ziheng/wzh/bridge
 OR=/data/ziheng/wzh/conda_envs/orfs/bin/openroad
 XPDIR=/data/ziheng/wzh/xplace_dac/Xplace
 RES=$B/ariane_multiseed_results.txt
-echo "arm seed hpwl dplace_tns droute_tns wirecap_fF" > $RES
+[ -f "$RES" ] || echo "arm seed hpwl dplace_tns droute_tns wirecap_fF" > $RES
 declare -A NS=( [routed]=$B/ar_backend/ar_base_netslack.csv [est]=$B/ar_backend/ar_base_place_netslack.csv )
 SC=1.0
 for seed in 0 1 2; do
  for arm in routed est; do
   pref="ms_${arm}_s${seed}"
+  if grep -q BACKEND_DONE $B/backend_$pref.log 2>/dev/null; then
+    echo "SKIP $pref (already done)"; continue
+  fi
   conda activate /data/ziheng/wzh/conda_envs/xplace
   export PATH=/usr/local/cuda-11.7/bin:$PATH; export PYTHONPATH=$XPDIR:$PYTHONPATH; cd $XPDIR
   python main.py --custom_json $B/ariane.json --load_from_raw True --detail_placement True \
