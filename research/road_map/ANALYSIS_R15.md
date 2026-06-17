@@ -57,6 +57,24 @@ The contribution is then: *predict the congestion-detour component of critical-a
 drive it to the routability lever, while the HPWL-reducible component drives the timing lever.*
 Naively adding detour-RC to the timing force (R15) does the opposite and backfires.
 
+## R16 — STEP-1 RESULT: C2 ruled out, C1 CONFIRMED (monotonic degradation)
+Re-derived the multiplier from the estimated-`--timing_opt` placement's OWN route (matched,
+not the stale no-timing ar_base route) and re-ran. Result:
+
+| arm | post-route TNS | wire-cap |
+|---|---|---|
+| baseline (estimated `--timing_opt`) | **−2600** | 544106 |
+| stale-mult corrected (R15) | −2817 | 557189 |
+| matched-mult corrected (R16) | **−2992** | 594520 |
+
+**Monotonic: more-accurate routing info → WORSE post-route + MORE congestion.** This rules out
+C2 (staleness would have *improved* with a fresher multiplier) and confirms **C1 (lever
+mismatch)**: feeding routing-induced detour delay into the HPWL-pull lever is *actively
+harmful*, and the better you model it, the more harm — because you pull congestion-detoured
+nets that the placer cannot shorten, adding congestion. This is a real, somewhat surprising,
+publishable finding: **naive route-aware timing-driven placement is counterproductive; route-
+awareness must drive the routability/spreading lever, not the wirelength-pull.**
+
 ## Falsifiable tests to confirm the ranking
 1. **Isolate C2:** re-derive the multiplier from the corrected placement's OWN route (iterate
    place→route→re-mult→re-place). If still worse → C1 dominates (mechanism issue, not staleness).
