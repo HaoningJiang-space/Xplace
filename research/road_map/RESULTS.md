@@ -171,6 +171,19 @@ The net-based oracle (R11/R12) was a stopgap because GPUTimer was blocked. With 
 - **Calibration:** default `wire_resistance_per_micron=2.535` is ICCAD-tuned and ~700× too high for NanGate45 (metal3 R≈3.6e-3 ohm/µm) → wild TNS (−2.6e7). With `--wire_resistance_per_micron 0.0036` (C default 0.16fF/µm ≈ NanGate45), **timing is sane: ariane final late WNS/TNS −4.4/−6868 ns** (4ns clock), and **timing-driven GP works** (late TNS improves −18471→−6868 as overflow drops). So `--timing_opt` (path-based, estimated RC) is now a valid FAIR baseline on the bridge.
 - (TODO: cross-check GPUTimer vs OpenSTA on a fixed placement for D1 fidelity; the 0.0036 is a single-layer proxy — a routed-layer-blended value is better.)
 
+## R15. ★ RC-correction in Xplace (path-based) — FIRST RESULT: it HURT (honest negative)
+Implemented route-aware RC-correction IN XPLACE (not Efficient-TDP): per-net wire-RC multiplier (routed/est detour) injected into the GPUTimer's FLUTE `edge_wl` (`rctree.cpp` + `set_net_rc_mult` + `--rc_mult_file`), so the path-based timer computes routed-corrected RC. ariane133, `--timing_opt` (wire_R 0.0036), back-end post-route:
+
+| arm | xplace late TNS | post-route TNS | wire-cap |
+|---|---|---|---|
+| no-timing (ar_base) | — | −3119 | 606745 |
+| **estimated `--timing_opt`** (baseline) | −6867 | **−2600** | 544106 |
+| **route-corrected `--timing_opt`** | −7355 | **−2817** | 557189 |
+
+**RC-correction made post-route TNS WORSE (−2600 → −2817, ~8%) and raised wire-cap.** Estimated `--timing_opt` is best (it already improves −3119→−2600, 17% over no-timing). So the route-aware RC info, injected this way, HURT.
+**Likely confound (must fix before concluding):** the multiplier is **doubly-stale** — derived from the `ar_base` *no-timing* placement's route, then applied to a *different* (timing-driven) placement that further moves cells. The routed/est ratio is for the wrong placement → mis-guides the timer. Also per-net (not per-arc), and pulling baseline-detoured nets tighter raised congestion (wire-cap↑). (Infra note: GPU-0 was contended by the user's PPoPP `async_sched` job → placement ran 8× slow but result is valid; use GPU 1.)
+**Honest read:** as a first cut, RC-correction does not help — consistent with the recurring pattern (R11 low-scale, R12 modest) that injecting routing info to pull nets can backfire via congestion. Next: kill the staleness (iterative/matched multiplier from the corrected placement's OWN route), per-arc granularity, and codex-audit. If it still doesn't beat estimated `--timing_opt` after that, the mechanism is likely incremental → reframe.
+
 ## NEXT (unblocked 2026-06-17) — the decisive PATH-BASED RC-correction experiment
 1. **RC-correction injection:** inject a per-net effective-wire-length (or R/C) multiplier = routed/estimated detour into the GPUTimer's `wirelen×R/C_per_micron` model → the path-based timer optimizes ROUTED delay. (Hook in `timing_opt.py` update_rc / the per-net length passed to `create_timing_rawdb`.)
 2. **Compare (path-based, force/seed-matched, WNS/Fmax/#viol metrics):** plain | `--timing_opt` (estimated RC, fair baseline) | RC-corrected `--timing_opt` (routed RC) → post-route TNS. If RC-correction beats the fair path-based baseline by >single-digit %, the thesis mechanism is validated; else reframe.
