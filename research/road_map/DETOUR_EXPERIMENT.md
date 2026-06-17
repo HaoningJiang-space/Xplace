@@ -55,3 +55,34 @@ The mechanism chain is x → routing-response → parasitics → timing. We have
 (criticality ranking, +5.6%). The detour term attacks the FIRST mile (x → routing-response) via a
 proxy. Validating the proxy against the real router (fidelity gate) BEFORE differentiating it (IFT) is
 the correct dependency order — exactly GOAL #13 (understand the mechanism before building on it).
+
+## 6. RESULTS (2026-06-18) — NEGATIVE, and what it does / does not show
+ariane, oracle routed criticality fixed (scale 1.0), arc-level detour added:
+| arm | HPWL | droute_TNS | wirecap_fF |
+|---|---|---|---|
+| base (no detour) | 2.4455e7 | **−2400.98** | 542112 |
+| +arc w=0.02 | 2.4959e7 (+2.1%) | −2552.4 (worse) | 560337 |
+| +arc w=0.10 | 2.5892e7 (+5.9%) | −2904.7 (worse) | 576179 |
+
+- Baseline reproduces the known −2401 routed-oracle result → harness correct.
+- The detour force **monotonically HURTS** post-route TNS while inflating HPWL + wirecap.
+- **Converges with R15/R18/TERM-2:** the detour-MAGNITUDE lever has no headroom on ariane (detour
+  ~4% of TNS); the value is the criticality RANKING, not a detour force. A NEW (differentiable,
+  arc-level) mechanism independently re-confirms the established negative for the magnitude lever.
+- **CONFOUND (honest, codex R11-audit flaw-2):** the detour force is ADDED on top of the oracle
+  net-weight WITHOUT force-matching → HPWL↑ may be "more pull" not "wrong detour direction." So this
+  does NOT cleanly isolate the detour signal's direction. A force-matched test (rescale total timing
+  force, like --timing_force_frac) is needed to isolate.
+- **Implication for IFT:** IFT is a more-exact version of THIS detour lever → on low-detour ariane it
+  would also lack headroom. **Do NOT build IFT until (a) a force-matched test isolates direction AND
+  (b) a HIGH-detour design shows the lever has headroom.** The fidelity-first ordering just saved the
+  IFT build effort — the point of GOAL #13.
+
+## 7. NEXT (diagnose lever-weak vs proxy-wrong, before any IFT)
+1. **Tier-1 correlation** (cheap, reuses bridge route): Spearman(proxy ρ_v / detour-factor, REAL
+   routed detour ℓ_routed/ℓ_est) on critical arcs. If ≈0 → proxy is the wrong signal (fix ρ:
+   pin-density → gpugr GR-demand). If >0 → proxy ranks detour correctly but the lever is just weak
+   on ariane → need a high-detour design.
+2. **Force-matched re-test** (rescale so ‖timing+detour‖ = ‖timing‖) to remove the over-pull confound.
+3. **High-detour design** hunt — ariane is low-detour (R18); the detour lever can only be fairly
+   tested where detour is a large TNS fraction.
