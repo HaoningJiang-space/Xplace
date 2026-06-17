@@ -410,3 +410,23 @@ LAYER-ASSIGNMENT channel (CEILING VI) + detour, NOT what a smarter fixed-layer e
 **Mandatory correction:** the honest est baseline is FAIR-LAYER (metal5/6), NOT platform-default metal3.
 All route-aware gains must be re-measured vs the fair baseline (will be ~half the vs-metal3 numbers).
 NEXT: re-run the placement gain (est_metal5 vs routed vs union criticality) at fair baseline → the honest headroom.
+
+## R29 — ★★ THESIS SURVIVES the flaw-3 deep check: route-aware gain is ROBUST to a FAIR-layer baseline
+ariane, same mechanism (net-weight, scale 1.0, top-13k), vary ONLY the criticality source:
+| criticality source | post-route TNS | gain vs that baseline |
+|---|---|---|
+| fair-est (metal5, less-pessimistic layer) | −2735 | — |
+| metal3-est (platform default) | −2685 | — |
+| Xplace --timing_opt (path-based est) | −2600 | — |
+| **routed** | −2480 | +9.3% vs fair-est, +7.6% vs metal3, +4.6% vs --timing_opt |
+| **union (metal5-est ∪ routed)** | −2454 | **+10.3% vs fair-est, +9.6% vs metal3, +5.6% vs --timing_opt** |
+**KEY:** the route-aware gain holds against the FAIR-layer est (metal5, −2735), NOT just the pessimistic
+metal3 (−2685). So codex flaw-3 is ADDRESSED at the PLACEMENT level: the gain is NOT a metal3-pessimism
+artifact. Surprising sub-finding: the fair-est PLACEMENT (−2735) is no better than metal3-est (−2685) —
+a less-pessimistic criticality RANKING (R28 Jaccard 0.46) does NOT yield a better placement; the gain
+comes ONLY from using the ACTUAL routed/union criticality, regardless of which fixed-layer est is the
+baseline. Depth-first chain R27(artifact concern)→R28(divergence half-artifact in the METRIC)→R29(but
+the placement GAIN is real, +9-10% vs fair baseline, +5-6% vs Xplace --timing_opt). The thesis positive
+(route-aware union criticality, layer-assignment+detour mechanism) survived the deepest scrutiny.
+Caveat still open: GR-fidelity eval (detailed-route+coupling pending on a tractable design); multi-design
+(bp_fe positive, swerv invalid, need a 3rd valid); vs Efficient-TDP pin2pin / C3PO head-to-head.
