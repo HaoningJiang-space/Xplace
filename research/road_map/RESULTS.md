@@ -248,3 +248,19 @@ the method GENERALIZES across designs, and the gain is even larger here. (bp_fe 
 xplace_backend_bpfe.tcl; 2_floorplan.odb → bpfe_place_input.def.) NOTE: bp_fe cold = no-timing;
 ariane cold = est-timing — to fully match, also measure bp_fe est-timing baseline (TODO). Trajectory
 improvement is the generalization signal. Two cases now positive: the online route-aware mechanism is real.
+
+## R21 — ★ MULTI-DESIGN CONTRADICTS: route-aware criticality does NOT generalize (HONEST NEGATIVE)
+Proper FAIR comparison (est-criticality net-weight vs routed-criticality net-weight, SAME mechanism
+top-13k/scale 1.0, post-route TNS):
+| design | est-crit | routed-crit | route-awareness |
+|---|---|---|---|
+| ariane | −2685 | −2421 | **HELPS +9.8%** |
+| bp_fe  | **−63279** | −66841 | **HURTS −5.6%** |
+The bp_fe "+32%" reported in R20 was entirely TIMING-vs-NO-TIMING (its cold start was no-timing) —
+route-awareness ITSELF hurts on bp_fe. So the R12/R19 ariane positive **does NOT generalize**: routed
+criticality beats estimated on ariane but LOSES on bp_fe. The thesis "routed > estimated criticality"
+is design-dependent, not universal. This is exactly what multi-case testing must catch (and what a
+reviewer/codex would attack). Hypothesis to test: route-awareness helps only where routed criticality
+DIVERGES strongly from estimated (ariane Jaccard 0.003, fixed-macro structural detour); on designs
+where routed≈estimated, swapping just adds noise + moving-target oscillation → hurts. NEXT: measure
+bp_fe routed-vs-est criticality divergence; characterize WHEN route-awareness helps (the real science).
