@@ -343,3 +343,29 @@ INSENSITIVE (est-timing ≈ cold, flat) — like ASAP7-synfree. swerv dropped as
 need a 3rd design with SANE, placement-improvable timing (TNS ~k-range like ariane/bp_fe). NEXT:
 re-run ariane+bp_fe {est,union} under the FROZEN auto-cal rule (frac=0.1) to confirm union still beats
 est design-invariantly (codex flaw-2); find a valid 3rd design (relax swerv clock, or bp_be/ariane136).
+
+## R27 — ★ THEORY: frozen criticality drops the route-response gradient (envelope fails); Level-A built
+codex-confirmed first-principles result (IMPLICIT_DIFF_TIMING.md, RELATED_WORK.md), 2026-06-18.
+- **The gap (codex CONFIRMED).** Our timing force `κ·∂HPWL/∂x` keeps the routed criticality RANKING
+  (κ) but applies it to a route-BLIND geometry gradient, dropping the cross term `(∂T/∂r)(dr*/dx)`.
+  The envelope theorem does NOT license this: it kills `∂_rR·dr*/dx` only for the routing objective
+  R's own value; timing T≠R, so `∂_pT≠0 ⇒` the route-response term is **generically nonzero** —
+  large exactly in the high-divergence regime (R22), i.e. where our headroom is. APPROACH_A.md's
+  envelope justification was therefore incomplete; this term is the unclaimed signal.
+- **Exact fix.** One adjoint solve `Hμ=∂_pT` through the (probability-space, barrier-regularized,
+  convex) routing optimum → route-aware `∂T/∂x` (IMPLICIT_DIFF_TIMING.md §5-8). κ stays the sparse
+  per-arc `∂T/∂d` (heuristic, not exact STA adjoint — flagged; smoothing/subgradient stated). Costs
+  #CG-iters × HVP, critical-support reduction = a Schur-complement approximation (terms named).
+- **Positioning (RELATED_WORK.md, grounded survey).** No prior work differentiates through the
+  routing layer for timing placement: A (diff-TDP DAC'22, Efficient-TDP DATE'25) = frozen est RC;
+  B (DGR DAC'24) = ∂/∂p, no ∂/∂x; C (ML GR→DR parasitic predictors, e.g. arXiv:2305.06917) =
+  **standalone non-differentiable annotators, no gradient to x**; D (GP+gate-sizing fusion ICCAD'24,
+  DiffCCD) = fuses sizing/clock, not routing (but validates LSE-smoothed STA for our §6).
+- **Level-A built (de-risk, one-directional).** `src/core/detour_timing.py`: additive
+  `L=Σ w_n·HPWL_n·(1+α·ρ_n)`, gated `--detour_timing_weight` (default 0 → inert). codex: autograd
+  correct; net_mask/activation/device fixed. FD self-check `tool/test_detour_timing.py`.
+  **NOT YET RUN** (no local torch; runs on moe-server). Granularity (CRITICALITY_GRANULARITY.md):
+  net-level is a scaffold (loses driver/sink asymmetry + per-sink detour); arc-level is the correct
+  unit and aligns Level-A with the IFT `∂_pT=Σ_a κ_a∂d_a/∂ℓ_a` — go arc-level the moment Level-A shows signal.
+- **NEXT (server):** run FD self-check; A/B `--detour_timing_weight {0.5,2.0}` × {ariane,bp_fe} under
+  frozen auto-cal (frac=0.1); watch post-route TNS at matched HPWL. Signal → arc-level → IFT.
