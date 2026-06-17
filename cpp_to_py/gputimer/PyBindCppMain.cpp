@@ -46,6 +46,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         .def("levelize", &gt::GPUTimer::levelize)
         .def("update_rc", &gt::GPUTimer::update_rc_timing)
         .def("update_rc_flute", &gt::GPUTimer::update_rc_timing_flute)
+        .def("set_net_rc_mult", &gt::GPUTimer::set_net_rc_mult)
         .def("update_rc_spef", &gt::GPUTimer::update_rc_timing_spef)
         .def("update_states", &gt::GPUTimer::update_states)
         .def("update_timing", &gt::GPUTimer::update_timing)

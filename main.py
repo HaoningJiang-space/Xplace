@@ -86,6 +86,7 @@ def get_option():
     parser.add_argument('--oracle_timing_file', type=str, default='', help='oracle per-net routed worst-slack csv (net,worst_slack_ns); drives a STATIC timing_pin_weight (route-aware oracle) WITHOUT the real GPUTimer')
     parser.add_argument('--oracle_timing_scale', type=float, default=0.1, help='scale for oracle timing_pin_weight = scale*crit_n (crit_n in [0,1])')
     parser.add_argument('--oracle_topk', type=int, default=0, help='if >0, keep only top-K most-critical nets at UNIFORM weight (force-matched routed-vs-estimated comparison)')
+    parser.add_argument('--rc_mult_file', type=str, default='', help='route-aware RC-correction: per-net wire-RC multiplier csv (net,...,mult); fed to GPUTimer wire RC so path-based timing optimizes routed delay')
     parser.add_argument('--write_global_placement', type=str2bool, default=False, help='write global placement result') 
     parser.add_argument('--output_dir', type=str, default="output", help='output directory') 
     parser.add_argument('--output_prefix', type=str, default="placement", help='prefix of placement output file') 

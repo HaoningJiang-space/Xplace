@@ -1,4 +1,5 @@
 import torch
+import os
 from cpp_to_py import gputimer, wirelength_timing_cuda
 from src.param_scheduler import MetricRecorder
 from utils import *
@@ -56,7 +57,33 @@ class GPUTimer():
         )
         
         self.timer = gputimer.create_gputimer(params, rawdb, gpdb, self.timing_raw_db)
-        
+
+        # === Route-aware RC-correction ===
+        # Load a per-net wire-RC multiplier (routed/estimated detour) and push it into the timer.
+        # The path-based GPUTimer then computes routed-corrected wire R/C and propagates it
+        # through STA (criticality/slack) — route-awareness via the DELAY model, not net-weighting.
+        rc_mult_file = getattr(args, "rc_mult_file", "")
+        if rc_mult_file and os.path.exists(rc_mult_file):
+            mult = {}
+            with open(rc_mult_file) as _f:
+                for li, line in enumerate(_f):
+                    parts = line.strip().split(",")
+                    if li == 0 or len(parts) < 2:
+                        continue
+                    try:
+                        mult[parts[0]] = float(parts[-1])
+                    except ValueError:
+                        pass
+            net_mult = torch.ones(data.num_nets, dtype=torch.float32)
+            matched = 0
+            for i, nm in enumerate(self.net_names):
+                if nm in mult:
+                    net_mult[i] = mult[nm]
+                    matched += 1
+            self.timer.set_net_rc_mult(net_mult)
+            print("[RC-correction] matched %d/%d nets from %s (mult range %.3f..%.3f)" % (
+                matched, len(self.net_names), rc_mult_file, float(net_mult.min()), float(net_mult.max())), flush=True)
+
         ## Timing optimization
         self.timer.init()
         self.timer.levelize()

@@ -34,6 +34,11 @@ public:
     void levelize();
     void update_rc_timing(torch::Tensor node_lpos, bool record = false, bool load = false, bool conpensation = false);
     void update_rc_timing_flute(torch::Tensor node_lpos, bool record = false);
+    // Route-aware RC-correction: per-net wire-RC multiplier (routed/estimated detour).
+    void set_net_rc_mult(torch::Tensor m) {
+        auto c = m.to(torch::kFloat32).contiguous().cpu();
+        net_rc_mult_cpu.assign(c.data_ptr<float>(), c.data_ptr<float>() + c.numel());
+    }
     void update_rc_timing_spef();
     void update_states();
     void update_timing();
@@ -85,6 +90,9 @@ public:
     int* net_is_clock;
 
     float clock_period;
+
+    // Route-aware RC-correction: per-net wire-RC multiplier (routed/estimated). Empty = off.
+    std::vector<float> net_rc_mult_cpu;
 
 public:
     float* x;

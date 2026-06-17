@@ -306,6 +306,20 @@ void GPUTimer::update_rc_timing_flute(torch::Tensor node_lpos, bool record) {
 
     auto [edge_from, edge_to, edge_wl, flat_net2node_start_map, flat_net2edge_start_map, node2pin_map, num_nodes, num_edges] =
         FluteRCTree(timing_raw_db, rf, cf);
+    // === Route-aware RC-correction ===
+    // Scale each net's FLUTE edge wirelength by a per-net detour multiplier (routed/estimated),
+    // so the path-based timer computes routed-corrected wire R/C and propagates it through STA.
+    // net_rc_mult_cpu empty => off (vanilla estimated timing). See research/road_map/PATH_BASED_PIVOT.md.
+    if (!net_rc_mult_cpu.empty() && (int)net_rc_mult_cpu.size() == timing_raw_db.num_nets) {
+        for (int i = 0; i < timing_raw_db.num_nets; ++i) {
+            float m = net_rc_mult_cpu[i];
+            if (m != 1.0f && i + 1 < (int)flat_net2edge_start_map.size()) {
+                for (int e = flat_net2edge_start_map[i]; e < flat_net2edge_start_map[i + 1]; ++e) {
+                    edge_wl[e] *= m;
+                }
+            }
+        }
+    }
     auto device = timing_raw_db.node_size.device();
     torch::Tensor node_order = torch::zeros({num_nodes}, torch::dtype(torch::kInt32).device(device)).contiguous();
     torch::Tensor edge_order = torch::zeros({num_edges}, torch::dtype(torch::kInt32).device(device)).contiguous();
