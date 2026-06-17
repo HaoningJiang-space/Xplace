@@ -112,9 +112,27 @@ Built the full congested substrate: Xplace places **ariane133** (167615 cells, *
 
 **On the congested macro design, estimated and routed criticality almost entirely disagree (top-200 Jaccard 0.003 vs 0.61 on aes).** Placement-time timing flags ~117k nets critical (M3 pessimism) while only ~13k are truly routed-critical → a placer optimizing estimated criticality targets the WRONG nets. This is the thesis premise made quantitative: **placement-time timing badly mispredicts post-route criticality where there is congestion, and route-awareness carries real different information.** The uncongested-aes null (R9) was expected. (Caveat: the estimated pessimism is partly the crude Steiner-M3 RC model + a timing-poor baseline placement; but routed criticality is clearly the better target.)
 
-## IN FLIGHT (2026-06-17)
-- **Decisive utility arms on ariane133:** routed-criticality (oracle) vs estimated-criticality weighting → post-route TNS. With Jaccard 0.003, the oracle should focus the right ~13k nets while estimated spreads over ~117k → oracle should win. Running.
-- Then: RC-correction oracle (delay magnitudes, not just ranking); multi-seed; iso-congestion.
+## R11. ★ Utility result on ariane133 (2026-06-17): route-awareness gives ~20% post-route TNS headroom that estimated criticality cannot
+Routed-criticality (oracle) vs estimated-criticality net-weighting, Xplace re-place → ariane back-end (CTS+GR). Baseline post-route TNS −3119:
+
+| arm | scale | post-route TNS | vs baseline | wire-cap fF |
+|---|---|---|---|---|
+| baseline (plain) | — | −3119 | — | 606745 |
+| estimated-criticality | 0.3 | −3100 | −0.6% | 610055 |
+| estimated-criticality | 1.0 | −3011 | −3.5% | 598448 |
+| **routed-crit (route-aware oracle)** | 0.3 | −2820 | −9.6% | 567968 |
+| **routed-crit (route-aware oracle)** | **1.0** | **−2401** | **−23.0%** | **542113** |
+
+- **Route-awareness headroom = (estimated −3011) → (routed −2401) ≈ 20% post-route TNS**, on the congested macro design. Estimated criticality (= a normal timing-driven placer) barely helps (−3.5%); routed criticality gives −23%.
+- **Not bought with congestion (clean):** the routed arm has the LOWEST wire-cap (542113 vs baseline 606745, −11%) — it improves timing AND reduces routing. Estimated raises wire-cap. So this is not the usual WL-for-timing trade.
+- **The Steiner-trap, shown:** routed arm's D_place(Steiner) TNS is hugely *worse* (−204k) yet post-route *best* — optimizing the pessimistic placement-time estimate is misguided; optimizing true routed criticality wins post-route. That contrast is the thesis.
+- **Contrast with aes (R9):** uncongested → routed≈estimated (no headroom); congested → routed≫estimated (20% headroom). Route-awareness pays exactly where R10's divergence (Jaccard 0.003) said it would.
+
+**This is the ORACLE upper bound** (uses true routed criticality from the baseline route): it proves the placement-controllable post-route headroom EXISTS and is large on congested designs, and that route-awareness — not generic timing-weighting — captures it. A real predictor captures some fraction; that is the thesis to build.
+
+## IN FLIGHT / NEXT (2026-06-17)
+- Rigor on R11: multi-seed (route determinism), a second congested/macro design, and the RC-correction oracle (delay magnitudes, not just criticality ranking) — does it beat the criticality oracle?
+- Then build the differentiable route-aware predictor (the actual contribution) → Exp3 full-flow PPA vs C3PO/Xplace-Timing.
 - **Oracle arm v2 (corrected):** add an "oracle timing" hook — enable the timing-WL term with `timing_pin_weight`/`net_weight` set from the baseline's routed criticality (no GPUTimer STA needed) → Xplace re-place → back-end → compare post-route TNS vs the −60.1 baseline at matched GR-WL. Codex-review the hook (it IS the thesis injection mechanism) before trusting results.
 - **Substrate de-risked:** Xplace-place → OpenROAD-route round-trip VERIFIED on gcd (above). Foundation for the oracle experiment is in place.
 - **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): scale the verified round-trip to a real/timed design (aes or ariane NanGate45) → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.

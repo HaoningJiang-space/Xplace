@@ -28,8 +28,11 @@ Sub-steps (update as each lands):
 - [x] **Injection-point finding:** plain GP ignores `net_weight`; route-aware force MUST enter via the timing-WL term (`merged_wl_loss_grad_timing`, net_weight+timing_pin_weight). `--net_weight_file` on plain GP = identical placement (confirmed).
 - [ ] **Oracle hook v2:** enable the timing-WL term with timing_pin_weight/net_weight set from baseline routed criticality (no GPUTimer STA) — THIS is the thesis injection mechanism. **Codex-review it before trusting.**
 - [x] Oracle arm + scale sweep: **scale 0.3 improves post-route TNS −60.1 → −51.2 (~15%)** at near-iso wire-cap; non-monotonic (sweet spot). Placement-controllable post-route headroom EXISTS (Gate-B-positive signal).
-- [ ] **Decisive isolation:** ESTIMATED-criticality (Steiner/D_place slacks) vs ROUTED-criticality (oracle) weights at matched scale/WL. Does route-awareness beat estimated? = the thesis claim.
-- [ ] Then: faithful RC-correction oracle; multi-design; iso-congestion control.
+- [x] **Isolation on aes (uncongested):** routed≈estimated (R9) — no route-awareness value where there's no congestion (expected).
+- [x] **Congested substrate (ariane133, 132 macros):** est-vs-routed criticality diverge (top-200 Jaccard 0.003) — premise validated (R10).
+- [x] **★ Utility (ariane133):** routed-criticality oracle −23% post-route TNS at LOWER wire-cap; estimated only −3.5% → **route-awareness ≈20% headroom on congested designs** (R11). Oracle upper bound; placement-controllable headroom EXISTS.
+- [ ] Rigor: multi-seed, 2nd macro design, RC-correction oracle (delay magnitudes vs ranking).
+- [ ] Build the differentiable route-aware predictor → Exp3 full-flow PPA vs C3PO/Xplace-Timing.
 
 ## Done (rolling, newest first)
 - 2026-06-17 Substrate verified: Xplace places ORFS NanGate45 (gcd 480, aes 13858) → OpenROAD round-trip route OK.
