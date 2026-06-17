@@ -219,3 +219,17 @@ routed criticality (available at place time). ariane, same back-end:
 cold start.** This resolves the circularity: a few place→route→re-weight rounds (industrial-style,
 deployable) claim essentially the full headroom. The +20% is REAL and ONLINE-achievable — not an
 oracle artifact. This is the first deployable positive result. (k2–k4 confirm fixed-point stability.)
+
+### R19 full trajectory (k0–k4) + oscillation finding
+| iter | criticality src | post-route TNS | HPWL |
+|---|---|---|---|
+| k0 | estimated (cold) | −2685 | 2.581E7 |
+| k1 | k0 routed | −2429 | 2.473E7 |
+| k2 | k1 routed | **−2421** (≈oracle −2401) | 2.470E7 |
+| k3 | k2 routed | −2499 | 2.471E7 |
+| k4 | k3 routed | −2485 | 2.472E7 |
+Online iteration recovers the oracle within ~1% (best k2 −2421 vs −2401), +9.8% over est cold start,
++6.9% over standard `--timing_opt` (−2600). MILD OSCILLATION after k2 (moving target: re-placing
+shifts the route → shifts criticality). FIX: EMA-damp the criticality across iterations (as Xplace's
+own `--timing_opt` EMA-damps), or best-sol track (take k2). Deployable, non-cheating positive.
+NEXT (SOTA): EMA damping + multi-design + the single-run in-loop version (Approach A) + vs C3PO.
