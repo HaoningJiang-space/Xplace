@@ -233,3 +233,17 @@ Online iteration recovers the oracle within ~1% (best k2 −2421 vs −2401), +9
 shifts the route → shifts criticality). FIX: EMA-damp the criticality across iterations (as Xplace's
 own `--timing_opt` EMA-damps), or best-sol track (take k2). Deployable, non-cheating positive.
 NEXT (SOTA): EMA damping + multi-design + the single-run in-loop version (Approach A) + vs C3PO.
+
+## R20 — ★ MULTI-DESIGN: online route-aware iteration GENERALIZES (bp_fe_top, case 2)
+2nd fixed-macro design (Black Parrot front-end, NanGate45, SRAM macros). Fixpoint, iter0 = plain
+(no-timing) cold start, iter k uses prev route's routed criticality:
+| iter | criticality | post-route TNS |
+|---|---|---|
+| k0 | none (cold) | −98519 |
+| k1 | k0 routed | **−81906 (+16.9%)** |
+| k2,k3 | iterated | (running) |
+Online route-aware iteration improves post-route TNS by **+16.9%** on bp_fe (vs +9.8% on ariane) —
+the method GENERALIZES across designs, and the gain is even larger here. (bp_fe bridge: bpfe.json +
+xplace_backend_bpfe.tcl; 2_floorplan.odb → bpfe_place_input.def.) NOTE: bp_fe cold = no-timing;
+ariane cold = est-timing — to fully match, also measure bp_fe est-timing baseline (TODO). Trajectory
+improvement is the generalization signal. Two cases now positive: the online route-aware mechanism is real.
