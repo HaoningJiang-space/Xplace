@@ -478,3 +478,34 @@ needs routability-grade placements (next phase: timing + cell-inflation co-run, 
 **Net for SOTA (#12):** the verified positive remains R29 (GR-fidelity, +5.6% vs --timing_opt), now with
 DR-routability corroboration; the clean DR+coupling number is deferred to the routability-integrated run.
 Infra now ready (layer-restricted + GR-adjusted DR back-end `xplace_backend_ariane_dr.tcl`).
+
+## R33 — ★★★ FIDELITY CAVEAT CLOSED, POSITIVELY: route-aware union gain SURVIVES (grows) at detailed-route + OpenRCX coupling SIGNOFF fidelity
+The R31 finding (plain-GP density-1.0 placements are unroutable-grade) was overcome by placing the 3
+R29 arms with `--use_cell_inflate True` (Xplace routability mode) + their criticality → routability-grade
+placements that **detailed-route to 0 DRC violations** (union & routed reached 0; fairest 0 after opt).
+Then OpenRCX coupling extraction + `write_spef`/`read_spef` (the missing step — see below) gives the
+true coupling-aware signoff TNS. ariane, cell-inflate, vary criticality source only:
+| arm (criticality) | GR-estimate TNS | **TRUE DR+OpenRCX-coupling TNS** | DR WNS |
+|---|---|---|---|
+| fair-est (metal5) | −3260 | **−972.5** | −0.545 |
+| routed | −3048 | **−832.0** | −0.514 |
+| **union (metal5∪routed)** | −3016 | **−823.7** | **−0.512** |
+**Route-aware union beats the fair-est baseline by +15.3% post-route TNS and +6% WNS at full
+detailed-route + coupling signoff fidelity (0 violations, OpenRCX).** routed +14.5%. The gain is NOT a
+GR-fidelity artifact — it is LARGER at signoff (+15.3%) than at GR fidelity (+7.5% at this density).
+Two more honest observations:
+- **GR estimate is ~3.4× pessimistic** vs true coupling-aware DR (fairest −3260→−972, union −3016→−824)
+  — the R28 RC-pessimism made absolute GR-TNS far too negative — BUT the RANKING is preserved
+  (union<routed<fairest at BOTH fidelities) → validates that R19–R29's GR-fidelity comparisons were
+  directionally correct (the contribution is the GP gradient/ranking, judged relatively).
+- **THE BUG (不失真, now fixed):** the first cell-inflate run reported DROUTE_DR_TNS == DROUTE_GR_TNS
+  *exactly* — `extract_parasitics` writes OpenRCX parasitics into the DB but STA keeps the stale
+  GR-estimated ones until `write_spef`+`read_spef` (ORFS final_report.tcl pattern). Caught by the
+  identical-to-13-sig-figs coincidence; fixed in `xplace_backend_ariane_dr.tcl`; numbers above are post-fix.
+**Status vs SOTA (#12):** the verified positive is now SIGNOFF-fidelity (not just GR): route-aware union
+criticality > fair-est baseline by +15.3% post-route coupling TNS on ariane, on a 0-violation detailed
+route. Remaining for STRONG SOTA: (a) vs Xplace `--timing_opt` at this same signoff fidelity (run pending —
+fair-est is the academic-TDP baseline, --timing_opt is Xplace's own); (b) ≥2 more valid designs at signoff
+fidelity; (c) the fixpoint/criticality was from density-1.0 routes (slightly mismatched to inflate density)
+→ a consistent inflate-density fixpoint may widen the gain. Infra fully ready (routability-grade place +
+layer/GR-adjusted + SPEF-correct DR back-end). Routed ODBs persisted (`infldr2_*_routed.odb`).
