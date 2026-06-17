@@ -31,6 +31,13 @@ puts "DROUTE_GR_TNS [sta::total_negative_slack -max]"
 if {[catch { detailed_route -bottom_routing_layer metal2 -top_routing_layer metal10 -verbose 1 } drmsg]} { puts "DRT_FAIL $drmsg" }
 define_process_corner -ext_model_index 0 X
 extract_parasitics -ext_model_file $NG/rcx_patterns.rules
+# CRITICAL (ORFS final_report.tcl): extract_parasitics writes into the DB but STA keeps the stale
+# GR-estimated parasitics until the SPEF is written AND read back. WITHOUT write_spef+read_spef the
+# DROUTE_DR_TNS == DROUTE_GR_TNS exactly (the bug that made the coupling extraction look inert).
+write_spef $OUT/$::env(XP_TAG).spef
+read_spef $OUT/$::env(XP_TAG).spef
 puts "DROUTE_DR_WNS [sta::worst_slack -max]"
 puts "DROUTE_DR_TNS [sta::total_negative_slack -max]"
+# persist the routed DB so future timing checks need not re-route
+write_db $OUT/$::env(XP_TAG)_routed.odb
 puts "BACKEND_DR_DONE"
