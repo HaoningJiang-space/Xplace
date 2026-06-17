@@ -390,3 +390,23 @@ SOTA claim.** bp_fe is clean (est≈routed, Spearman 0.99) — consistent (its e
 pessimism — match the per-layer/GR RC scale so est WNS ≈ routed-magnitude), then recompute Spearman/
 Jaccard AND the route-aware gain. If the divergence + gain SHRINK toward bp_fe levels → the ariane win
 was a bad-timer artifact (thesis must pivot). If they PERSIST under a fair est → real route-response (thesis holds).
+
+## R28 — ★★ R27 RESOLVED (decisive, depth-first): HALF the ariane divergence is metal3-pessimism artifact, HALF is REAL route-response
+Root cause of the 39× est pessimism (R27): `setRC.tcl` sets `set_wire_rc -signal -layer metal3`
+(R=3.57e-3) — placement assumes ALL signal wires on metal3, but GR routes long/critical nets on
+metal6/7/8 (R down to 1.875e-4, ~19× lower). Re-estimating with a FAIR layer:
+| est layer | est WNS | est TNS | Jaccard(top13k) vs routed | Spearman vs routed |
+|---|---|---|---|---|
+| metal3 (platform default) | −20.68 | −490911 | 0.244 | 0.581 |
+| metal5 (fair) | −7.89 | −26081 | **0.459** | **0.761** |
+| metal6 (fair) | −7.71 | −24995 | 0.463 | 0.764 |
+| (bp_fe est, well-calibrated) | — | — | 0.94 | 0.99 |
+**~Half the divergence was the metal3-pessimism ARTIFACT** (Jaccard 0.24→0.46, Spearman 0.58→0.76 under
+a fair layer) — codex flaw-3 PARTIALLY confirmed. **But ~half is REAL:** even with a fair-layer est,
+Jaccard plateaus at 0.46 (≪ bp_fe 0.94), Spearman 0.76 — routing's per-net LAYER ASSIGNMENT (long/
+critical nets → low-R metal7/8) + detour genuinely reorders criticality, unpredictable by any fixed-
+layer est. **Thesis SURVIVES but tightened + mechanism clarified:** the real route-response is the
+LAYER-ASSIGNMENT channel (CEILING VI) + detour, NOT what a smarter fixed-layer est can predict.
+**Mandatory correction:** the honest est baseline is FAIR-LAYER (metal5/6), NOT platform-default metal3.
+All route-aware gains must be re-measured vs the fair baseline (will be ~half the vs-metal3 numbers).
+NEXT: re-run the placement gain (est_metal5 vs routed vs union criticality) at fair baseline → the honest headroom.
