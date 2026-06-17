@@ -128,11 +128,24 @@ Routed-criticality (oracle) vs estimated-criticality net-weighting, Xplace re-pl
 - **The Steiner-trap, shown:** routed arm's D_place(Steiner) TNS is hugely *worse* (−204k) yet post-route *best* — optimizing the pessimistic placement-time estimate is misguided; optimizing true routed criticality wins post-route. That contrast is the thesis.
 - **Contrast with aes (R9):** uncongested → routed≈estimated (no headroom); congested → routed≫estimated (20% headroom). Route-awareness pays exactly where R10's divergence (Jaccard 0.003) said it would.
 
-**This is the ORACLE upper bound** (uses true routed criticality from the baseline route): it proves the placement-controllable post-route headroom EXISTS and is large on congested designs, and that route-awareness — not generic timing-weighting — captures it. A real predictor captures some fraction; that is the thesis to build.
+**This is the ORACLE upper bound** (uses true routed criticality from the baseline route): it proves the placement-controllable post-route headroom EXISTS and is large on congested designs. A real predictor captures some fraction; that is the thesis to build.
 
-## IN FLIGHT / NEXT (2026-06-17)
-- Rigor on R11: multi-seed (route determinism), a second congested/macro design, and the RC-correction oracle (delay magnitudes, not just criticality ranking) — does it beat the criticality oracle?
-- Then build the differentiable route-aware predictor (the actual contribution) → Exp3 full-flow PPA vs C3PO/Xplace-Timing.
+### R11-AUDIT (codex, 2026-06-17) — R11 OVERCLAIMS; downgraded to a smoke test
+codex adversarial audit. **Defensible claim only:** "a static net-weight oracle from baseline routed slack improves ONE ariane133 GR-timing run." It does NOT yet show route-awareness, the thesis mechanism, or a deployable placer. Confounds to fix before any claim:
+1. **Estimated arm is a STRAWMAN** — it used the broken Steiner-M3 criticality (117k "critical" nets, R10). A fair baseline = tuned `set_wire_rc` + **top-K / WNS-relative criticality matched to the oracle's ~13k cardinality** + real Xplace `--timing_opt` in-loop re-timing + scale/force-norm sweep. "Normal timing-driven placer" was wrong wording.
+2. **Force not matched** — routed weighted ~13k nets, estimated ~117k; at the same `scale` the gradient norms differ, so the win may be *focus*, not route-awareness. Must match ‖g_timing‖ or Pareto-tune per arm.
+3. **Single seed / single GR pass** — need ≥5 placement × 3 route seeds, paired, mean/CI.
+4. **GR not SPEF** — the −23% may vanish under detailed-route OpenRCX SPEF + coupling + repair.
+5. **Metric weak** — %TNS on a wildly-violating design (baseline −3119, Steiner −98413) may just redistribute violations. Report absolute **WNS, #violating endpoints, Fmax/period sweep, endpoint overlap, path win/loss**, and routed-WL/overflow/DRC (not just wire-cap).
+6. **Label leakage** — oracle uses test-instance routed labels → upper bound ONLY; need provenance hashes.
+7. **Mechanism** — net-weighting tests a criticality *ranking*, not the per-arc RC-correction the thesis claims.
+**Code bugs flagged (to fix):** headerless-CSV skips one net; exact net-name match vs Xplace name-stripping; missing-file silently disables the arm; the committed GR back-end is hard-coded to aes (ariane run not reproducible from the committed harness). `net_weight` is dead in the CUDA timing kernel — only `timing_pin_weight` matters (docs corrected).
+**Strongest reviewer rejection:** "R11 compares a test-label oracle against a known-bad Steiner/M3 baseline on one GR run and calls the delta route-awareness." → R11 is reframed as an oracle *upper-bound smoke test* only.
+
+## IN FLIGHT / NEXT (2026-06-17) — the FAIR experiment (per R11-audit)
+Clean design (codex): arms = {plain | fair estimated (top-K matched to oracle cardinality + force-norm matched, and/or real Xplace `--timing_opt`) | routed-criticality oracle | RC-residual oracle}, on the SAME fixed designs, **force-norm matched + post-route routed-WL/DRC matched**, detailed-route SPEF + one STA engine, **≥5 placement × 3 route seeds**, metrics = **WNS / #violating endpoints / Fmax / TNS** (not just %TNS), + shuffled-criticality and top-K controls. Then the learned predictor (no test labels) must recover a fraction of the oracle gain.
+- **bp_fe_top** (2nd macro design) flow running → repeat the divergence (R10) + fair arms.
+- Back-end to also report WNS + #violating-endpoints + routed-WL/overflow; fix the flagged code bugs; commit a design-parametrized back-end (not aes-hardcoded).
 - **Oracle arm v2 (corrected):** add an "oracle timing" hook — enable the timing-WL term with `timing_pin_weight`/`net_weight` set from the baseline's routed criticality (no GPUTimer STA needed) → Xplace re-place → back-end → compare post-route TNS vs the −60.1 baseline at matched GR-WL. Codex-review the hook (it IS the thesis injection mechanism) before trusting results.
 - **Substrate de-risked:** Xplace-place → OpenROAD-route round-trip VERIFIED on gcd (above). Foundation for the oracle experiment is in place.
 - **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): scale the verified round-trip to a real/timed design (aes or ariane NanGate45) → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.
