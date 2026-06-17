@@ -142,6 +142,20 @@ codex adversarial audit. **Defensible claim only:** "a static net-weight oracle 
 **Code bugs flagged (to fix):** headerless-CSV skips one net; exact net-name match vs Xplace name-stripping; missing-file silently disables the arm; the committed GR back-end is hard-coded to aes (ariane run not reproducible from the committed harness). `net_weight` is dead in the CUDA timing kernel — only `timing_pin_weight` matters (docs corrected).
 **Strongest reviewer rejection:** "R11 compares a test-label oracle against a known-bad Steiner/M3 baseline on one GR run and calls the delta route-awareness." → R11 is reframed as an oracle *upper-bound smoke test* only.
 
+## R12. ★ FAIR force-matched comparison (2026-06-17): R11's 20% was mostly the force confound
+Per R11-audit, re-ran routed-vs-estimated with `--oracle_topk 13000` (both arms weight the SAME top-13k nets at UNIFORM weight → identical cardinality + force magnitude; only the *ranking* differs). ariane133, baseline post-route TNS −3119:
+
+| arm | scale | post-route TNS | wire-cap |
+|---|---|---|---|
+| baseline | — | −3119 | 606745 |
+| estimated-crit (top-13k) | 0.3 | −2972 | 592697 |
+| **routed-crit (top-13k)** | 0.3 | **−2882** | 564601 |
+| estimated-crit (top-13k) | 1.0 | −2685 | 564960 |
+| routed-crit (top-13k) | 1.0 | *(re-running)* | |
+
+**Once force-matched, the routed-vs-estimated gap collapses from ~20% (R11) to ~3%** (routed −2882 vs estimated −2972 at scale 0.3), and at scale 1.0 estimated (−2685) even edges ahead. **So most of R11's apparent "route-awareness headroom" was the cardinality/force confound codex flagged** (estimated diffused over 117k nets = weak force; routed focused on 13k = strong force). Route-awareness via **net-weighting** gives at best a *modest* (~3% TNS, lower wire-cap) and scale-inconsistent edge.
+**Honest conclusion:** net-weighting (criticality *ranking*) is NOT the right vehicle for route-awareness — when you control for force, the routed ranking barely beats the estimated ranking even on a congested design. **The thesis must rest on the RC-CORRECTION mechanism (per-arc delay-magnitude correction), not net-weighting.** This sharpens the contribution: the value, if any, is in correcting *how wrong the delay is*, not *which nets rank critical*. (R11 stands only as: focused timing-weighting helps, and true-routed labels beat a broken Steiner-M3 ranking — neither is the thesis.)
+
 ## IN FLIGHT / NEXT (2026-06-17) — the FAIR experiment (per R11-audit)
 Clean design (codex): arms = {plain | fair estimated (top-K matched to oracle cardinality + force-norm matched, and/or real Xplace `--timing_opt`) | routed-criticality oracle | RC-residual oracle}, on the SAME fixed designs, **force-norm matched + post-route routed-WL/DRC matched**, detailed-route SPEF + one STA engine, **≥5 placement × 3 route seeds**, metrics = **WNS / #violating endpoints / Fmax / TNS** (not just %TNS), + shuffled-criticality and top-K controls. Then the learned predictor (no test labels) must recover a fraction of the oracle gain.
 - **bp_fe_top** (2nd macro design) flow running → repeat the divergence (R10) + fair arms.
