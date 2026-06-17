@@ -108,3 +108,23 @@ E without C (Δ exists but uncontrollable) → thesis dead. C without P (control
 unpredictable cheaply) → fall back to bounded residual-flow emulator. P without iso-
 congestion/PPA win → not non-incremental. Each has a designed experiment; see FIDELITY
 falsifiable checks + RESULTS IN-FLIGHT.
+
+## CURRENT SYNTHESIS (R19–R23, supersedes earlier sections)
+The route-aware value is the criticality RANKING (not delay magnitude — R15 falsified magnitude).
+Concretely, two timers see the criticality differently:
+- **DIVERGENCE LAW (R22):** route-awareness value ∝ Jaccard-divergence of est-vs-routed top-K critical
+  nets. ariane 0.24 (divergent, fixed-macro structural detour) → helps; bp_fe 0.94 (≈equal) → pure
+  swap hurts. Divergence is set by structural (fixed-macro) congestion.
+- **UNION METHOD (R23, the robust answer):** est and routed timers each MISS different true-critical
+  nets; the robust route-aware criticality is their UNION: crit = max(est_norm, routed_norm), top-K.
+  ariane −2390.6 (beats pure-routed AND the routed oracle; +8% vs --timing_opt −2600), bp_fe −62045
+  (beats est; pure-routed regression eliminated). Generalizes across the divergence axis.
+- **ONLINE / non-cheating:** the routed criticality comes from a previous route (fixpoint R19) or, to
+  remove staleness/oscillation, an in-loop position-differentiable router (DGR_PLAN.md, envelope thm).
+- **ACTUATION axis (orthogonal):** net-weight (current, already beats --timing_opt) → pin2pin critical-
+  arc (Efficient-TDP strength, to port into Xplace) — amplifies the criticality, so only safe with the
+  correct (union) criticality. SOTA test: pin2pin+union (mine) vs pin2pin+est (Efficient-TDP-equiv).
+
+This is the system: **place against the UNION of estimated and routed criticality rankings, refreshed
+online, actuated by a path/pin2pin timing force** — route-aware where it matters (high divergence),
+harmless where it doesn't (low divergence), no oracle.
