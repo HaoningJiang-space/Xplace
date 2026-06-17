@@ -17,11 +17,18 @@ set_propagated_clock [all_clocks]
 detailed_placement
 catch { check_placement }
 set_routing_layers -signal metal2-metal10 -clock metal2-metal10
-global_route
+# CRITICAL routability fix (ORFS global_route.tcl): reserve 50% layer capacity for vias/local routing
+# + congestion-driven GR. WITHOUT this my GR over-packs nets -> DR violation explosion (580k vs ORFS
+# 83k, non-converging). This is the dominant missing piece, more than target_density.
+set_global_routing_layer_adjustment metal2-metal10 0.5
+global_route -congestion_iterations 30 -verbose
 estimate_parasitics -global_routing
 puts "DROUTE_GR_TNS [sta::total_negative_slack -max]"
 # --- detailed route + OpenRCX coupling-aware extraction ---
-if {[catch { detailed_route -verbose 0 } drmsg]} { puts "DRT_FAIL $drmsg" }
+# CRITICAL: restrict to metal2-metal10 (ORFS NanGate45 MIN/MAX_ROUTING_LAYER). Omitting these lets
+# DR include metal1 -> huge metal1 guide-region pin-query -> DETERMINISTIC HANG at "Init gr pin query"
+# on the large ariane design (ORFS does init in 37s WITH the restriction; my omission hung 3h+).
+if {[catch { detailed_route -bottom_routing_layer metal2 -top_routing_layer metal10 -verbose 1 } drmsg]} { puts "DRT_FAIL $drmsg" }
 define_process_corner -ext_model_index 0 X
 extract_parasitics -ext_model_file $NG/rcx_patterns.rules
 puts "DROUTE_DR_WNS [sta::worst_slack -max]"

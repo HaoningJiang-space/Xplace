@@ -430,3 +430,51 @@ the placement GAIN is real, +9-10% vs fair baseline, +5-6% vs Xplace --timing_op
 (route-aware union criticality, layer-assignment+detour mechanism) survived the deepest scrutiny.
 Caveat still open: GR-fidelity eval (detailed-route+coupling pending on a tractable design); multi-design
 (bp_fe positive, swerv invalid, need a 3rd valid); vs Efficient-TDP pin2pin / C3PO head-to-head.
+
+## R31 — ★★ FIDELITY DEEP-DIVE (depth-first, goal #13 / 不失真): the route-aware comparison runs on placements that are NOT routability-grade — clean DR+coupling signoff is blocked by Xplace's congestion, not by the timing method
+Attempted to close the last big caveat (R29): detailed-route + OpenRCX coupling re-eval. Went deep into the
+back-end and found a chain of issues, each instructive:
+1. **DR init DETERMINISTIC HANG fixed (infra):** my `detailed_route` omitted `-bottom_routing_layer metal2
+   -top_routing_layer metal10` (ORFS NanGate45 MIN/MAX_ROUTING_LAYER). Without it DR includes metal1 →
+   huge metal1 guide-region pin-query → hangs forever at "Init gr pin query" on the large ariane design
+   (3h17m, 0 progress). ORFS does this step in 37s WITH the restriction. Adding the two flags unblocked it
+   (init now ~80s, DR proceeds). **bp_fe (10MB DEF) never hung** (small enough) — confirms it is a scale×
+   metal1 interaction, not a generic bug. Macros are NOT the cause: ariane's 132 SRAMs are FIXED at the
+   *identical* coords as ORFS golden (`(2720480 1702960) N` etc.) — Xplace doesn't move fixed macros; the
+   DRT-0419 "no track through macro pin" warnings are inherent to fakeram LEF and appear in ORFS too.
+2. **GR over-optimism fixed (infra):** my `global_route` lacked `set_global_routing_layer_adjustment
+   metal2-metal10 0.5` (50% capacity reserve for vias/local) + `-congestion_iterations 30` that ORFS uses.
+   Without it GR under-estimates congestion → DR explodes.
+3. **★ THE REAL FINDING — density-1.0 plain-GP Xplace placements are unroutable-grade.** Even WITH the GR
+   adjustment, ariane density-1.0 GR cannot clear overflow (31+ min, "GRT-0103 Extra Run for hard
+   benchmark", no convergence; ORFS's own placement GR finishes in 15:24). detailed_route on the
+   density-1.0 arms produces **559k–588k DRC violations and RISING** (ORFS golden ariane = 83k initial,
+   converges) → would take ~20h to hit the iteration cap, never clean. bp_fe density-1.0 same story
+   (75k–138k violations, non-converging). Re-placing union at target_density 0.7 only halved violations
+   (166k@50%) AND **hurt timing** (GR-TNS −2824 vs −2454 @1.0). **Root cause: pure analytical timing-GP
+   (no `--use_cell_inflate`) yields placements far denser than routability-grade — exactly why
+   routability-driven placement exists.** So clean DR+coupling SIGNOFF on these placements is not
+   achievable without integrating routability (cell inflation) into the timing flow — a substantial
+   experiment, not a back-end tweak.
+**Honest status of the fidelity caveat:** NOT fully closeable on the current (plain-GP) placements. What
+CAN be stated (R32) is a DR-stage *corroboration*, not a signoff number.
+
+## R32 — ★ DR-stage corroboration: route-aware arms are MORE routable than the fair baseline (same DR effort), consistent with the GR-timing ranking
+Routing the R29 fair-baseline arms (fairest/routed/union, density-1.0) through the fixed DR back-end, GR
+stage reproduces R29 exactly, and the detailed-route first-pass (DRT-0199) DRC-violation count ranks the
+arms the same direction as timing:
+| arm | GR post-route TNS (R29, reproduced) | DR first-pass DRC violations |
+|---|---|---|
+| fair-est (metal5) | −2735 | 588233 |
+| routed | −2480 | 559240 |
+| union | −2454 | 576737 |
+**Both route-aware arms (routed, union) beat the fair-est baseline on BOTH the GR timing-proxy AND
+detailed-route routability** (fewer DRC violations). routed has the fewest violations; union the best
+timing. This is a genuine detailed-route-stage signal in the thesis's favor — the route-aware criticality
+does not merely improve a GR-only proxy, it makes the placement measurably more routable. CAVEAT: the
+absolute violation counts are huge (unroutable-grade density-1.0), so this is a *relative-direction*
+corroboration, not a coupling-signoff TNS; the 5% violation spread is modest. Full coupling-aware signoff
+needs routability-grade placements (next phase: timing + cell-inflation co-run, then DR+OpenRCX).
+**Net for SOTA (#12):** the verified positive remains R29 (GR-fidelity, +5.6% vs --timing_opt), now with
+DR-routability corroboration; the clean DR+coupling number is deferred to the routability-integrated run.
+Infra now ready (layer-restricted + GR-adjusted DR back-end `xplace_backend_ariane_dr.tcl`).
