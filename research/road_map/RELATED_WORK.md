@@ -53,6 +53,26 @@ PDFs not all readable — claims cited by title/venue/idea, uncertainty flagged.
   (They DO validate our §6 choice: LSE-smoothed STA is the established way to make the timing
   adjoint a true gradient — IMPLICIT_DIFF_TIMING.md §6.)
 
+  **Sharpened (2026-06-18 deep-read):** the ICCAD'24 fusion (Du, Guo, Lin et al., DREAMPlace group;
+  +77% TNS / +43% WNS vs OpenROAD) is a **single JOINT differentiable objective** co-optimizing
+  placement + gate-sizing (continuous-relaxed sizes) with LSE-smoothed timing on **placement-stage
+  estimated RC** — NOT a bilevel implicit-differentiation through a lower-level argmin, and **no
+  routing**. So our IFT-through-the-routing-optimum (a true bilevel, IMPLICIT_DIFF_TIMING.md §5) is
+  methodologically distinct from their joint-objective fusion, AND attacks a variable (routing
+  response) none of the EDA-differentiable line touches. Our "co-descent" alternative (the heavier
+  Level-B) is the analogue of their joint objective; the IFT is the cheaper/exacter bilevel form.
+
+### E. Bilevel / implicit-differentiation (the borrowed ML machinery — GOAL #9b)
+Implicit differentiation of an argmin is standard ML (OptNet, Deep Equilibrium Models; bilevel via
+IFT: arXiv:2205.03076, arXiv:2302.14473, AAAI'23). The recipe — model the lower optimum as an
+implicit layer, get gradients via the IFT with a Vector-Jacobian-Product / adjoint solve (no explicit
+Hessian inverse), unrolled-diff as the alternative when the optimum isn't reached — is EXACTLY
+IMPLICIT_DIFF_TIMING.md §5–8. **Contribution = applying this established bilevel machinery to the
+place↔route↔timing coupling** (the lower problem = the router; the upper = timing), which the EDA
+literature has not done. Borrowing the ML discipline (well-posedness, VJP adjoint, unrolled-vs-implicit
+trade-off) de-risks the derivation and is the "abstract to a high-level problem, read other fields"
+move (GOAL #9b).
+
 ## The gap (our two contributions, neither covered above)
 1. **Route-response timing gradient via implicit differentiation** (IMPLICIT_DIFF_TIMING.md).
    The cross term `(∂T/∂r)(dr*/dx)` — how moving a cell changes the *routing response* and thus
