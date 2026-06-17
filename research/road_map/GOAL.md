@@ -89,3 +89,23 @@ Run substrate: moe-server (`ssh -p 10548 ziheng@10.16.52.172`, hpclab03), **GPU 
 - **Strong SOTA (#12) not yet attempted** — confirmed positive ≠ SOTA. Must beat C3PO/Xplace-Timing.
 - TERM-2 may add little beyond TERM1 (if controllable detour is small) — being measured now.
 - Physical risk (D5): placement-controllable parasitic delta dominated by cell/CTS/buffering.
+
+## ★ CURRENT STATE (2026-06-18, R29 — depth-verified, supersedes above)
+**Depth-first (#13) paid off — found & resolved a thesis-threatening confound:**
+- R27/R28: ~HALF the headline ariane criticality divergence was a metal3-pessimism ARTIFACT (platform
+  `set_wire_rc -layer metal3` over-estimates long-net R 19× vs GR's metal6/7/8). codex flaw-3 partly real.
+- R29 (the rehabilitation): but the PLACEMENT gain is ROBUST — route-aware union criticality beats the
+  FAIR-layer (metal5) est by +10%, and Xplace's own path-based `--timing_opt` (−2600) by **+5.6%**
+  (union −2454, routed −2480). The gain is NOT a pessimism artifact; it comes from the ACTUAL routed
+  criticality (layer-assignment + detour reorder, ~half the divergence is real, unpredictable by fixed-layer est).
+**Verified positive:** route-aware UNION criticality net-weighting > Xplace --timing_opt by ~+5.6% post-route
+TNS on ariane, robust to the est-baseline layer assumption. Mechanism = layer-assignment-aware criticality
+(CEILING VI) + detour. Method robustness: --timing_force_frac auto-calibration (R25/R26).
+**Honest remaining path to SOTA (#12), NOT rushed (#13):**
+1. detailed-route + OpenRCX (coupling) fidelity re-eval on a TRACTABLE design (bp_fe has 6_final.spef).
+2. IFT route-response cross-term (IMPLICIT_DIFF_TIMING.md) — the theoretically-correct EXTRA gain beyond frozen.
+3. a 3rd VALID design (swerv invalid: 3.4ns/−1.6M placement-insensitive); fair-baseline multi-design.
+4. vs Efficient-TDP (pin2pin) / C3PO head-to-head at iso-congestion.
+**Honest distance to strong SOTA:** a solid, depth-verified ~+5.6%-vs-Xplace-timing positive on 1 design;
+NOT yet multi-design SOTA vs the actual competitors. Real headroom is modest (layer+detour), not the
+inflated metal3 numbers.
