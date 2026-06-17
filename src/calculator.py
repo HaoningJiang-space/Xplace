@@ -85,7 +85,7 @@ def calc_obj_and_grad(
             # additive ∂[Σ w_n·HPWL_n·(1+α·ρ_n)]/∂x — tests whether a differentiable
             # routed-length (detour) signal beats the frozen route-blind HPWL force. Gated;
             # inert unless --detour_timing_weight > 0. Costs O(#critical nets) (w_n sparse).
-            if getattr(args, "detour_timing_weight", 0.0) > 0 and getattr(data, "net_criticality", None) is not None:
+            if getattr(args, "detour_timing_weight", 0.0) > 0:
                 mov_count = mov_rhs - mov_lhs
                 g_detour = detour_timing_grad(
                     conn_node_pos[:mov_count], conn_node_pos[mov_count:], data,

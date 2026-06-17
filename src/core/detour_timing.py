@@ -71,20 +71,38 @@ def detour_timing_grad(conn_node_pos_mov, conn_fix_node_pos, data, alpha=2.0, gr
         Zeros if no critical net is present.
     """
     device = conn_node_pos_mov.device
-    w = getattr(data, "net_criticality", None)
-    if w is None:
-        return torch.zeros_like(conn_node_pos_mov)
-
     pos_mov = conn_node_pos_mov.detach().requires_grad_(True)
     conn = torch.cat([pos_mov, conn_fix_node_pos.detach()], dim=0)
 
     pin_pos = conn[data.pin_id2node_id] + data.pin_rel_cpos          # (P, 2) differentiable
-    pin_net = data.pin_id2net_id                                     # (P,)
+    pin_net = data.pin_id2net_id.to(device)                         # (P,)
 
-    crit_nets = (w > 0).nonzero(as_tuple=True)[0]
+    # Per-net criticality weight w_n. Prefer the route-aware UNION source (net_criticality);
+    # fall back to the estimated-timer per-pin weight (timing_pin_weight) aggregated to nets,
+    # so the term is also testable under plain --timing_opt (which does not set net_criticality).
+    w = getattr(data, "net_criticality", None)
+    if w is not None:
+        w = w.to(device=device, dtype=pos_mov.dtype)
+        num_nets = w.shape[0]
+    else:
+        tpw = getattr(getattr(data, "gputimer", None), "timing_pin_weight", None)
+        if tpw is None:
+            return torch.zeros_like(conn_node_pos_mov)
+        num_nets = data.net_mask.shape[0]
+        wn = torch.zeros(num_nets, device=device, dtype=pos_mov.dtype).scatter_reduce(
+            0, pin_net, tpw.to(device=device, dtype=pos_mov.dtype), reduce="amax", include_self=True)
+        rng = (wn.max() - wn.min()).clamp(min=eps)
+        wn = (wn - wn.min()) / rng
+        w = torch.where(wn > 0.1, wn, torch.zeros_like(wn))         # keep only the top band (sparse)
+
+    # exclude masked nets (match WL / timing-WL net selection; drops huge/degree-1 nets)
+    sel = w > 0
+    net_mask = getattr(data, "net_mask", None)
+    if net_mask is not None:
+        sel = sel & net_mask.to(device).bool()
+    crit_nets = sel.nonzero(as_tuple=True)[0]
     if crit_nets.numel() == 0:
         return torch.zeros_like(conn_node_pos_mov)
-    num_nets = w.shape[0]
     K = crit_nets.numel()
 
     # compact critical-net ids 0..K-1, and keep only pins on critical nets
@@ -112,7 +130,11 @@ def detour_timing_grad(conn_node_pos_mov, conn_fix_node_pos, data, alpha=2.0, gr
     cx = torch.zeros(K, device=device, dtype=pos_mov.dtype).scatter_add(0, pk_cid, pk_pos[:, 0]) / cnt
     cy = torch.zeros(K, device=device, dtype=pos_mov.dtype).scatter_add(0, pk_cid, pk_pos[:, 1]) / cnt
 
-    # differentiable congestion field from ALL pins (unit weight), relative to mean demand
+    # differentiable congestion field from ALL pins (unit weight), relative to mean demand.
+    # lo/hi are DETACHED: the grid frame is fixed per call (positions normalized into it), so the
+    # gradient is the response of demand/centroid *within* a fixed frame, not of the frame itself —
+    # the intended, stable behavior for a per-iteration congestion proxy (Level-A). span is floored
+    # to avoid div-by-0; a degenerate (near-zero-span) axis saturates clamp(0,1) so grads vanish there.
     lo = pin_pos.detach().amin(0)
     hi = pin_pos.detach().amax(0)
     span = (hi - lo).clamp(min=eps)
