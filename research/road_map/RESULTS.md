@@ -101,8 +101,20 @@ Estimated-criticality (Steiner/D_place slacks) arm vs the routed (oracle) arm, m
 1. **aes is uncongested** (40% util, 0 DRC) → routed-criticality ≈ estimated *by construction* (little routing distortion). Route-awareness can only pay where routed **diverges** from estimated → **congested/macro designs** (ariane133; or high-`target_density` aes). The critical-net SETS already overlapped here (same worst nets `_00046_`/`_08330_`/`_09017_`), confirming low divergence.
 2. **Net-weighting uses only the criticality RANKING** (similar for both); the thesis mechanism corrects per-arc **delay magnitudes** — info net-weighting structurally cannot exploit. The faithful **RC-correction oracle** is the real test.
 
+## R10. Congested-substrate divergence (2026-06-17): the thesis premise, validated
+Built the full congested substrate: Xplace places **ariane133** (167615 cells, **132 fakeram45 macros fixed**, 152343 movable std cells, RC=0) → ariane back-end (+fakeram45 LEF/lib, CTS+GR). Baseline: D_place(Steiner) TNS −98413 → D_route(GR) TNS −3119 (Steiner wildly pessimistic on long macro nets at M3; routing recovers).
+**Estimated-vs-routed criticality divergence (the key signal):**
+
+| design | Spearman(est,routed) | top-200 crit Jaccard | est crit nets | routed crit nets |
+|---|---|---|---|---|
+| aes (uncongested, 40% util) | 0.948 | 0.613 | 9923 | 10707 |
+| **ariane133 (132 macros)** | **0.581** | **0.003** | 117813 | 12918 |
+
+**On the congested macro design, estimated and routed criticality almost entirely disagree (top-200 Jaccard 0.003 vs 0.61 on aes).** Placement-time timing flags ~117k nets critical (M3 pessimism) while only ~13k are truly routed-critical → a placer optimizing estimated criticality targets the WRONG nets. This is the thesis premise made quantitative: **placement-time timing badly mispredicts post-route criticality where there is congestion, and route-awareness carries real different information.** The uncongested-aes null (R9) was expected. (Caveat: the estimated pessimism is partly the crude Steiner-M3 RC model + a timing-poor baseline placement; but routed criticality is clearly the better target.)
+
 ## IN FLIGHT (2026-06-17)
-- **Two decisive follow-ups:** (a) re-run the routed-vs-estimated isolation on a **congested** substrate (high-util aes and/or ariane133) where routed≠estimated — that is where route-awareness should pay; (b) the **RC-correction oracle** (feed true routed per-arc RC into the placer's delay model, not net-weights). If route-awareness shows no advantage even on a congested design via RC-correction, the thesis's hard physical risk (D5/§5) bites.
+- **Decisive utility arms on ariane133:** routed-criticality (oracle) vs estimated-criticality weighting → post-route TNS. With Jaccard 0.003, the oracle should focus the right ~13k nets while estimated spreads over ~117k → oracle should win. Running.
+- Then: RC-correction oracle (delay magnitudes, not just ranking); multi-seed; iso-congestion.
 - **Oracle arm v2 (corrected):** add an "oracle timing" hook — enable the timing-WL term with `timing_pin_weight`/`net_weight` set from the baseline's routed criticality (no GPUTimer STA needed) → Xplace re-place → back-end → compare post-route TNS vs the −60.1 baseline at matched GR-WL. Codex-review the hook (it IS the thesis injection mechanism) before trusting results.
 - **Substrate de-risked:** Xplace-place → OpenROAD-route round-trip VERIFIED on gcd (above). Foundation for the oracle experiment is in place.
 - **★ Decisive next experiment = true-residual ORACLE placement** (codex's cheapest falsifier, upper-bounds the thesis): scale the verified round-trip to a real/timed design (aes or ariane NanGate45) → inject the ACTUAL routed-RC residual (perfect-predictor oracle) → short late-stage placement update → re-route same flow/seed → post-route WNS/TNS vs Xplace-Timing & C3PO/RUDY at matched routed-WL/DRC. If a PERFECT predictor can't beat route-seed noise, STOP.
