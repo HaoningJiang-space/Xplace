@@ -90,6 +90,7 @@ def calc_obj_and_grad(
                 g_detour = detour_timing_grad(
                     conn_node_pos[:mov_count], conn_node_pos[mov_count:], data,
                     alpha=getattr(args, "detour_alpha", 2.0),
+                    arc=getattr(args, "detour_arc", False),
                 )
                 mov_node_pos.grad[mov_lhs:mov_rhs] += args.detour_timing_weight * g_detour
 

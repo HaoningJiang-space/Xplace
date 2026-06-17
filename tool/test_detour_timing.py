@@ -80,25 +80,54 @@ def base_frame(mov, fix, data, margin=0.15):
     return (lo - margin * span, hi + margin * span)
 
 
+def loss_only_arc(mov, fix, data, frame):
+    """ARC-mode FD reference: mirrors detour_timing_grad(arc=True) with net_criticality broadcast
+    to pins (the fake data has no gputimer.timing_pin_weight)."""
+    lo, hi = frame; span = (hi - lo).clamp(min=1e-6)
+    p = mov.clone().requires_grad_(True)
+    conn = torch.cat([p, fix], 0)
+    pin = conn[data.pin_id2node_id] + data.pin_rel_cpos
+    pin_net = data.pin_id2net_id
+    num_nets = data.net_mask.shape[0]
+    kp = data.net_criticality[pin_net]
+    rng = (kp.max() - kp.min()).clamp(min=1e-6); kp = (kp - kp.min()) / rng
+    selp = (kp > 0.1) & data.net_mask.bool()[pin_net]
+    cntN = torch.zeros(num_nets, dtype=DT).scatter_add(0, pin_net, torch.ones_like(pin_net, dtype=DT)).clamp(min=1.0)
+    cNx = torch.zeros(num_nets, dtype=DT).scatter_add(0, pin_net, pin[:, 0]) / cntN
+    cNy = torch.zeros(num_nets, dtype=DT).scatter_add(0, pin_net, pin[:, 1]) / cntN
+    vp = pin[selp]; vn = pin_net[selp]; vk = kp[selp]
+    len_v = (vp[:, 0] - cNx[vn]).abs() + (vp[:, 1] - cNy[vn]).abs()
+    def tg(px, py):
+        return (((px - lo[0]) / span[0]).clamp(0, 1) * (GRID - 1),
+                ((py - lo[1]) / span[1]).clamp(0, 1) * (GRID - 1))
+    gx, gy = tg(pin[:, 0], pin[:, 1])
+    dem = _bilinear_splat(gx, gy, torch.ones_like(gx), GRID); rho = dem / (dem.mean() + 1e-6)
+    gxv, gyv = tg(vp[:, 0], vp[:, 1]); rho_v = _bilinear_sample(rho, gxv, gyv)
+    return (vk * len_v * (1.0 + ALPHA * rho_v)).sum(), p
+
+
 def main():
     ok = True
-    for seed in range(4):
-        mov, fix, data = make_case(seed=seed)
-        frame = base_frame(mov, fix, data)          # frozen frame: module & FD use the SAME function
-        g = detour_timing_grad(mov, fix, data, alpha=ALPHA, grid=GRID, frame=frame)
-        assert g.shape == mov.shape and torch.isfinite(g).all(), "bad grad shape/nan"
-        eps = 1e-6
-        max_err = 0.0
-        for i in range(mov.shape[0]):
-            for j in range(2):
-                mp = mov.clone(); mm = mov.clone(); mp[i, j] += eps; mm[i, j] -= eps
-                lp, _ = loss_only(mp, fix, data, frame); lm, _ = loss_only(mm, fix, data, frame)
-                num = ((lp - lm) / (2 * eps)).item()
-                err = abs(num - g[i, j].item())
-                max_err = max(max_err, err)
-        status = "PASS" if max_err < 1e-4 else "FAIL"
-        ok &= max_err < 1e-4
-        print(f"seed={seed}  |grad|={g.norm():.4f}  max|fd-autograd|={max_err:.2e}  {status}")
+    for mode in ("net", "arc"):
+        arc = (mode == "arc")
+        ref = loss_only_arc if arc else loss_only
+        for seed in range(4):
+            mov, fix, data = make_case(seed=seed)
+            frame = base_frame(mov, fix, data)      # frozen frame: module & FD use the SAME function
+            g = detour_timing_grad(mov, fix, data, alpha=ALPHA, grid=GRID, frame=frame, arc=arc)
+            assert g.shape == mov.shape and torch.isfinite(g).all(), "bad grad shape/nan"
+            eps = 1e-6
+            max_err = 0.0
+            for i in range(mov.shape[0]):
+                for j in range(2):
+                    mp = mov.clone(); mm = mov.clone(); mp[i, j] += eps; mm[i, j] -= eps
+                    lp, _ = ref(mp, fix, data, frame); lm, _ = ref(mm, fix, data, frame)
+                    num = ((lp - lm) / (2 * eps)).item()
+                    err = abs(num - g[i, j].item())
+                    max_err = max(max_err, err)
+            status = "PASS" if max_err < 1e-4 else "FAIL"
+            ok &= max_err < 1e-4
+            print(f"mode={mode} seed={seed}  |grad|={g.norm():.4f}  max|fd-autograd|={max_err:.2e}  {status}")
     print("ALL PASS" if ok else "SOME FAILED")
     sys.exit(0 if ok else 1)
 
