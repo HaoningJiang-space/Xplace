@@ -264,3 +264,18 @@ reviewer/codex would attack). Hypothesis to test: route-awareness helps only whe
 DIVERGES strongly from estimated (ariane Jaccard 0.003, fixed-macro structural detour); on designs
 where routed≈estimated, swapping just adds noise + moving-target oscillation → hurts. NEXT: measure
 bp_fe routed-vs-est criticality divergence; characterize WHEN route-awareness helps (the real science).
+
+## R22 — ★ INSIGHT: route-awareness value ∝ est-vs-routed criticality DIVERGENCE (explains R21)
+est-vs-routed criticality Jaccard (top-13000 critical nets, SAME placement):
+| design | Jaccard(top-200 / 2k / 13k) | route-awareness |
+|---|---|---|
+| ariane | 0.0025 / 0.014 / 0.244 (highly DIVERGENT) | HELPS +9.8% |
+| bp_fe  | 0.015 / 0.748 / 0.937 (routed ≈ est) | HURTS −5.6% |
+**The contradiction is fully explained:** route-awareness helps in PROPORTION to how much routing
+changes the criticality ranking. ariane (132 fixed macros → big structural detour) → routed diverges
+hugely → new info → helps. bp_fe (few small SRAMs) → routed≈estimated → no new info, only moving-target
+noise → hurts. **Divergence is the predictor, driven by structural (fixed-macro) congestion.**
+Coherent framework: *route-aware TDP helps ⟺ routing structurally distorts the criticality ranking.*
+**Better method (R23, implementing): SELECTIVE/BLENDED criticality** — trust routed only where it
+confidently diverges from estimated (e.g. crit = max(est, routed) or EMA blend), so high-divergence
+designs benefit and low-divergence designs fall back to estimated (no harm). Robust across designs.
