@@ -32,7 +32,9 @@ Sub-steps (update as each lands):
 - [x] **Congested substrate (ariane133, 132 macros):** est-vs-routed criticality diverge (top-200 Jaccard 0.003) — premise validated (R10).
 - [x] **★ Utility (ariane133):** routed-criticality oracle −23% post-route TNS at LOWER wire-cap; estimated only −3.5% → **route-awareness ≈20% headroom on congested designs** (R11). Oracle upper bound; placement-controllable headroom EXISTS.
 - [ ] Rigor: multi-seed, 2nd macro design, RC-correction oracle (delay magnitudes vs ranking).
-- [ ] Build the differentiable route-aware predictor → Exp3 full-flow PPA vs C3PO/Xplace-Timing.
+- [x] **GPUTimer unblocked + PATH-BASED timing works** (R13/R14): fix = all libs via `libs` list; calibrate wire R (0.0036 for NanGate45). Real `--timing_opt` (path-informed, Efficient-TDP-like) runs on ariane, sane timing (late −4.4/−6868), TNS improves during GP. This is the fair path-based baseline.
+- [ ] **★ Decisive: PATH-BASED RC-correction** — inject routed/estimated detour multiplier into GPUTimer wire RC → optimize routed delay; compare vs fair `--timing_opt` baseline, force/seed-matched, WNS/Fmax metrics.
+- [ ] Then the differentiable route-aware predictor → Exp3 full-flow PPA vs C3PO/Xplace-Timing.
 
 ## Done (rolling, newest first)
 - 2026-06-17 Substrate verified: Xplace places ORFS NanGate45 (gcd 480, aes 13858) → OpenROAD round-trip route OK.
