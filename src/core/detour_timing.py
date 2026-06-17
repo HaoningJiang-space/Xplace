@@ -57,7 +57,7 @@ def _bilinear_sample(field, gx, gy):
     return out
 
 
-def detour_timing_grad(conn_node_pos_mov, conn_fix_node_pos, data, alpha=2.0, grid=128, eps=1e-6):
+def detour_timing_grad(conn_node_pos_mov, conn_fix_node_pos, data, alpha=2.0, grid=128, eps=1e-6, frame=None):
     """Gradient of L_detour w.r.t. the MOVABLE node positions.
 
     Args:
@@ -135,8 +135,13 @@ def detour_timing_grad(conn_node_pos_mov, conn_fix_node_pos, data, alpha=2.0, gr
     # gradient is the response of demand/centroid *within* a fixed frame, not of the frame itself —
     # the intended, stable behavior for a per-iteration congestion proxy (Level-A). span is floored
     # to avoid div-by-0; a degenerate (near-zero-span) axis saturates clamp(0,1) so grads vanish there.
-    lo = pin_pos.detach().amin(0)
-    hi = pin_pos.detach().amax(0)
+    if frame is None:
+        lo = pin_pos.detach().amin(0)
+        hi = pin_pos.detach().amax(0)
+    else:                                # caller-fixed frame (e.g. die/core bounds) — codex LOW#3
+        lo, hi = frame
+        lo = lo.to(device=device, dtype=pos_mov.dtype)
+        hi = hi.to(device=device, dtype=pos_mov.dtype)
     span = (hi - lo).clamp(min=eps)
 
     def to_grid(px, py):

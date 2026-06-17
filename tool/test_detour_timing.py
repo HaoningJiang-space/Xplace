@@ -38,8 +38,12 @@ def make_case(M=8, F=3, P=20, K=5, seed=0):
     return mov, fix, data
 
 
-def loss_only(mov, fix, data):
-    """Recompute L with grad enabled — the reference the FD differentiates."""
+def loss_only(mov, fix, data, frame):
+    """Recompute L with grad enabled — the reference the FD differentiates. The congestion FRAME
+    (lo, hi) is FROZEN (passed in), matching detour_timing_grad's detached-frame semantics, so the
+    FD differentiates the SAME function the module's autograd does."""
+    lo, hi = frame
+    span = (hi - lo).clamp(min=1e-6)
     p = mov.clone().requires_grad_(True)
     conn = torch.cat([p, fix], 0)
     pin = conn[data.pin_id2node_id] + data.pin_rel_cpos
@@ -59,7 +63,6 @@ def loss_only(mov, fix, data):
     cnt = torch.zeros(K, dtype=DT).scatter_add(0, cid, torch.ones_like(cid, dtype=DT)).clamp(min=1)
     cx = torch.zeros(K, dtype=DT).scatter_add(0, cid, pk[:, 0]) / cnt
     cy = torch.zeros(K, dtype=DT).scatter_add(0, cid, pk[:, 1]) / cnt
-    lo = pin.detach().amin(0); hi = pin.detach().amax(0); span = (hi - lo).clamp(min=1e-6)
     def tg(px, py):
         return (((px - lo[0]) / span[0]).clamp(0, 1) * (GRID - 1),
                 ((py - lo[1]) / span[1]).clamp(0, 1) * (GRID - 1))
@@ -69,18 +72,27 @@ def loss_only(mov, fix, data):
     return (w[cn] * hp * (1.0 + ALPHA * rn)).sum(), p
 
 
+def base_frame(mov, fix, data, margin=0.15):
+    """Frozen, margin-expanded congestion frame so every pin is strictly interior (no clamp kink)."""
+    conn = torch.cat([mov, fix], 0)
+    pin = (conn[data.pin_id2node_id] + data.pin_rel_cpos).detach()
+    lo = pin.amin(0); hi = pin.amax(0); span = (hi - lo).clamp(min=1e-6)
+    return (lo - margin * span, hi + margin * span)
+
+
 def main():
     ok = True
     for seed in range(4):
         mov, fix, data = make_case(seed=seed)
-        g = detour_timing_grad(mov, fix, data, alpha=ALPHA, grid=GRID)
+        frame = base_frame(mov, fix, data)          # frozen frame: module & FD use the SAME function
+        g = detour_timing_grad(mov, fix, data, alpha=ALPHA, grid=GRID, frame=frame)
         assert g.shape == mov.shape and torch.isfinite(g).all(), "bad grad shape/nan"
         eps = 1e-6
         max_err = 0.0
         for i in range(mov.shape[0]):
             for j in range(2):
                 mp = mov.clone(); mm = mov.clone(); mp[i, j] += eps; mm[i, j] -= eps
-                lp, _ = loss_only(mp, fix, data); lm, _ = loss_only(mm, fix, data)
+                lp, _ = loss_only(mp, fix, data, frame); lm, _ = loss_only(mm, fix, data, frame)
                 num = ((lp - lm) / (2 * eps)).item()
                 err = abs(num - g[i, j].item())
                 max_err = max(max_err, err)
