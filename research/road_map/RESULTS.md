@@ -509,3 +509,26 @@ fair-est is the academic-TDP baseline, --timing_opt is Xplace's own); (b) ≥2 m
 fidelity; (c) the fixpoint/criticality was from density-1.0 routes (slightly mismatched to inflate density)
 → a consistent inflate-density fixpoint may widen the gain. Infra fully ready (routability-grade place +
 layer/GR-adjusted + SPEF-correct DR back-end). Routed ODBs persisted (`infldr2_*_routed.odb`).
+
+## R34 — vs Xplace `--timing_opt` at signoff: ATTEMPTED, blocked by a mechanism-mismatch confound (and an incidental routability finding)
+Tried the head-to-head vs Xplace's own `--timing_opt` (full GPUTimer path-based pull) + `--use_cell_inflate`
+at signoff fidelity. Outcome: NOT a clean comparison, for a principled reason.
+- `--timing_opt`+inflate placed ariane at **HPWL 2.463E7 — DENSER than the route-aware union arm (2.819E7)**:
+  the strong GPUTimer pull (exponential criticality terms) over-concentrates critical cells, counteracting
+  the cell-inflation spreading. The resulting placement does NOT route cleanly — GR stuck 30+ min in
+  "GRT-0103 Extra Run for hard benchmark" with a recurring high-fanout net (net5567, degree 112) error, no
+  convergence → no signoff TNS obtainable.
+- **Mechanism mismatch = the comparison is not apples-to-apples anyway:** the R33 arms (fairest/routed/union)
+  all use the SAME gentle oracle net-weighting at scale 1.0, varying ONLY the criticality source — the clean
+  isolation of "routed/union criticality vs estimated criticality". `--timing_opt` is a different, much
+  stronger force (different density, different routability). Comparing them conflates force-strength with
+  criticality-source. **The mechanism-matched signoff result is R33 (union +15.3% vs the fair-est academic
+  baseline), which IS the core thesis claim (route-aware criticality > estimated criticality).**
+- **Incidental finding (favors the thesis):** at matched routability mode, the route-aware union placement
+  routes to 0 violations while `--timing_opt`'s denser placement does not route cleanly — i.e. the gentle
+  route-aware criticality net-weighting yields a MORE routable timing placement than the strong-pull mode.
+**Decision:** park the `--timing_opt` signoff head-to-head (confounded); the SOTA comparison vs `--timing_opt`
+stays at R29's GR-fidelity (+5.6%, density-1.0, where --timing_opt routed via GR). The signoff-fidelity
+positive is R33 (mechanism-matched, +15.3% vs fair-est). NEXT for #12: 2nd valid design at signoff (bp_fe
+cell-inflate arms), and a force-strength-matched --timing_opt comparison (lower timing_init_weight so its
+density ≈ the net-weight arms) if a direct vs-production number is needed.
