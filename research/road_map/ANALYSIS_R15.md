@@ -93,6 +93,30 @@ congestion spreading force, which DOES see macro-routing congestion) — the pro
 lever for this congestion type. If even that can't beat −2600, the macro-detour is likely not
 placement-controllable (D5/§5 physical risk) and the thesis must target cell-congested designs.
 
+
+## R18 — STEP (b) EFFECT-SIZE: detour is only ~4% of TNS on ariane (the gating number)
+Clean decomposition on the same placement+netlist (pre-CTS):
+TNS_STEINER (HPWL-wire only) = -2372.8 ; TNS_ROUTED (HPWL+detour) = -2475.5.
+**Detour's contribution to TNS = 102.7 ns = 4.3% of TNS.** So the route-aware-detour mechanism's
+CEILING on ariane is ~4% (perfect TERM-2 = eliminate all detour). R15 showed mishandling costs
+8-15% via congestion -> **downside risk > addressable upside**. MATH.md condition (b) [wire/detour-
+delay fraction material] comes back WEAK here. Cell + HPWL-wire dominate ~96% of TNS.
+**Honest implication:** on ariane (fixed-macro, 38% util, NanGate45), route-aware timing-driven
+placement has little headroom. The thesis needs EITHER a design where detour is a much larger TNS
+fraction (wire-dominated / higher-util / advanced node) -- to be searched -- OR it reframes to the
+(rigorous) negative+diagnostic result (R15/R16 monotonic harm + MATH.md TERM-2 lever theory + this
+4% effect-size). Caveats on the 4%: GR-based (detailed-route SPEF+coupling could be larger),
+pre-CTS, on a timing-optimized placement (detour already low).
+
+## DGR (NVlabs, canonical) assessment for borrowing
+DGR is a differentiable ROUTER: its variables are routing path/tree/layer PROBABILITIES (model.py
+self.p, hor_p/ver_p) for FIXED pin positions; input = CUGR2 tree data (pins fixed). It gives
+d(routing cost)/d(routing vars), NOT d(cost)/d(pin pos). To feed the placement TERM-2 gradient it
+would need a differentiable pin-pos -> routing-cost bridge (significant extension). Its congestion-
+game cost (sigmoid overflow = Pigouvian-tax-like) is conceptually the congestion price pi_b of
+MATH.md -- a good theoretical match -- but the ~4% effect-size (R18) does not justify the integration
+on ariane. Use canonical NVlabs only (the HaoningJiang fork is modified/broken per user).
+
 ## Falsifiable tests to confirm the ranking
 1. **Isolate C2:** re-derive the multiplier from the corrected placement's OWN route (iterate
    place→route→re-mult→re-place). If still worse → C1 dominates (mechanism issue, not staleness).
