@@ -7,7 +7,9 @@ Last updated: 2026-06-17 (pm). Rewritten as milestones complete; the single plac
 Build a **better GLOBAL PLACER**: close **post-route** WNS/TNS that a congestion-blind
 timing-driven placer cannot, via a **fidelity-preserving route-aware timing model**. Must be
 **non-incremental**, a genuine methodological contribution, and **stop only at STRONG SOTA**
-(beat C3PO / Xplace-Timing on post-route timing at iso-congestion). Target DAC 2027.
+(beat C3PO / Xplace-Timing on post-route timing at iso-congestion). **Target DAC 2027 — ~5 months
+out (deadline ~Nov 2026). DO NOT RUSH: understand the mechanism deeply before claiming/coding;
+depth beats speed.** A wrong-but-fast result wastes more than a slow-but-correct one.
 
 ## Process invariants (the standing /goal — always on, updated 2026-06-17)
 1. **Write insight + results to md, multi-faceted** (this file + RESULTS/MATH/ESSENCE/UNIFICATION…).
@@ -26,7 +28,11 @@ timing-driven placer cannot, via a **fidelity-preserving route-aware timing mode
     gradients, Gumbel/soft-assignment. This is the methodological engine.
 12. **★ Stop only at STRONG SOTA** — a confirmed positive is necessary, not sufficient. The bar is
     beating the SOTA route-aware timing placer (C3PO ASPDAC'26 / Xplace-Timing) on post-route
-    WNS/TNS at iso-congestion, multi-design. **不失真** (FIDELITY D1–D9) throughout.
+    WNS/TNS at iso-congestion, multi-design. **不失真** (FIDELITY D1–D9) throughout. Until then,
+    keep iterating — never conclude early.
+13. **★ Depth over speed (DAC 2027, ~5 months).** 弄懂了再说话 — fully understand the mechanism
+    (derive it, codex-verify it, check the literature) BEFORE coding or claiming. There is time;
+    spend it on correctness and understanding, not on premature breadth.
 
 ## Current state (the live picture)
 **POSITIVE result CONFIRMED (multi-seed):** routed-criticality net-weighting beats estimated-
@@ -43,19 +49,28 @@ broken. So the thesis substrate = fixed-macro / structurally-congested designs.
 TERM2 (Σ_b π_b ∂ρ_b/∂x, timing-weighted congestion price — the missing cross-term). The positive so
 far is TERM1 done right (routed criticality). TERM2 is being tested now.
 
-## Current objective (ADAPTIVE — live target)
-**(running) TERM-2 prototype on ariane:** does a timing-weighted congestion (route) force added on
-top of the +20% net-weighting further improve post-route TNS, and is the timing-weighting (vs
-uniform) the cause? 4-arm {nw | +uniform-rf | +timing-rf α=1 | α=2}. Decision rule in PROTOTYPE.md.
+## Current objective (ADAPTIVE — live target, 2026-06-18)
+Current best method = **R23 normalized UNION criticality** (ariane −2390.6, bp_fe −62045) under the
+**frozen auto-cal rule** (`--timing_force_frac=0.1`, R25/R26). Theory upgrade = **R27**: frozen
+criticality drops the route-response cross term `(∂T/∂r)(dr*/dx)`; envelope theorem fails (T≠R);
+restore via IFT (IMPLICIT_DIFF_TIMING.md). codex architecture review (2026-06-18) redirect:
 
-Then, toward STRONG SOTA (the only stop condition, #12):
-- [ ] **Deployable predictor of routed criticality** (remove the oracle): the differentiable
-      unification (UNIFICATION.md) — online differentiable routing supplies routed criticality /
-      π_b to the placement gradient. This is the #11 differentiable engine and the non-incremental
-      core. Recover a large fraction of the +20% WITHOUT the oracle.
-- [ ] **2nd + 3rd fixed-macro / congested designs** (multi-case, #3) — confirm the headroom generalizes.
-- [ ] **SOTA comparison vs C3PO / Xplace-Timing** at iso-congestion, WNS/TNS/Fmax, post-route (#12).
-- [ ] **codex adversarial review** of the predictor + the SOTA comparison fairness (#2).
+**Sequenced plan (codex-converged — arc-level FIRST, fidelity gate BEFORE IFT):**
+- [ ] **Arc-level union criticality + arc-corridor detour proxy** (NOT net-level — net aggregation is
+      a "false-negative machine", erases signal). Upgrade `detour_timing.py` to per-arc (driver→sink):
+      `len_a=‖u−v‖₁`, corridor congestion `ρ_a`, per-arc `κ_a`. (CRITICALITY_GRANULARITY.md §3.)
+- [ ] **★ FIDELITY GATE (the make-or-break, codex risk #4):** measure cosine / descent agreement of
+      the detour-gradient direction vs **finite-difference REAL reroute+STA** on critical arcs. If the
+      direction disagrees, the proxy differentiates the WRONG simulator → fix the proxy before IFT.
+- [ ] **IFT** (IMPLICIT_DIFF_TIMING.md) ONLY after the gate passes; else prefer the simpler
+      "arc-level union + cheap detour force + periodic routed-STA refresh" (codex 90% architecture),
+      or the **perturbation-response distillation** alternative (codex #5).
+- [ ] **Multi-design under the FROZEN rule** (#3): ariane + bp_fe + a valid 3rd (swerv dropped, R26)
+      — union must beat est design-invariantly.
+- [ ] **STRONG SOTA (#12):** vs C3PO / Xplace-Timing / Efficient-TDP, iso-congestion, post-route, ≥3 designs.
+- [ ] **codex review** the arc-level term + the SOTA fairness (#2).
+
+Run substrate: moe-server (`ssh -p 10548 ziheng@10.16.52.172`, hpclab03), **GPU 1 only** (GPU 0 = PPoPP).
 
 ## Done (rolling, newest first)
 - 2026-06-17 **Multi-seed CONFIRMED** routed-criticality net-weight +20–27% over est across 3 seeds (ariane).
