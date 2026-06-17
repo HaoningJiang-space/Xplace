@@ -61,3 +61,24 @@ critical nets have few critical arcs.
 ## 5. Data-structure note (FRAMEWORK §4 D9 echo)
 Arc key MUST be unique `(net, driver_pin, sink_pin)`. The earlier GR-residual join blew 340k→492k on
 non-unique keys. The arc-level tensor must be keyed by sink pin id (unique), not (net,sink_index).
+
+## 6. Data-structure resolution (verified 2026-06-18) — what's available for arc-level
+Investigated the timer + db to ground the arc-level upgrade WITHOUT guessing (GOAL #10, #13):
+- **Driver pin per net:** `GPPin.getDirection()` IS exposed via pybind (`io_parser/BindHelper.cpp:37`),
+  but NOT materialized as a PlaceData tensor. → materialize `data.net_driver_pin` ONCE at setup from
+  gpdb pin directions (OUTPUT = driver). **No C++ change, no rebuild** (server build is dirty — avoid).
+- **True STA arcs:** the timer's `at_prefix_pin` (`path.cu:28`, arrival-time predecessor per pin) is the
+  exact critical-path arc structure (more faithful than netlist driver→sink for combinational dirs),
+  but it is C++-internal → exposing needs pybind + rebuild. **Defer** (heavier; do after v1 shows signal).
+- **Per-sink criticality:** `timing_pin_weight` (`timing_opt.py:91`, per-pin, len=num_pins) is already
+  the per-sink criticality; the oracle path builds only net-level `net_criticality` (broadcast to sinks).
+
+**Arc-level v1 decision (zero C++):** materialize `net_driver_pin` via `getDirection`; per critical
+sink pin `v` with driver `u=net_driver_pin[net(v)]`, weight `κ_v=timing_pin_weight[v]` (or net_crit
+broadcast):
+```
+L_arc = Σ_v κ_v · ‖pos(u) − pos(v)‖₁ · (1 + α · ρ_corridor(u,v))     # ρ over the u→v bbox, not net centroid
+```
+This removes net-level's three approximations (driver/sink asymmetry, per-sink detour, wrong-pin pull)
+with no rebuild. **TO VERIFY before coding:** gpdb pin-id ↔ PlaceData pin_id alignment, and that net
+driver is unique (tie-breaking for multi-output / no-driver nets — use net_mask + assert).
