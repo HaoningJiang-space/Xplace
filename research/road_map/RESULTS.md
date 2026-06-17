@@ -327,3 +327,19 @@ is mis-calibrated. **FIX (robust): auto-calibrate the timing-force scale to the 
 magnitude per design** (as Xplace auto-normalizes route_weight: init = density_grad.max/route_grad.max),
 so the frozen RULE is "timing force = fixed FRACTION of WL force", design-invariant. Re-run swerv with
 auto-calibrated scale. Honest: route-awareness is moot until the actuation scale generalizes.
+
+## R26 — auto-calibration VALIDATED; swerv is an invalid timing substrate
+swerv frac-calibration (vs cold −1600442, scale-1.0 disaster was HPWL 1.894E7 / TNS −1668072):
+| frac | HPWL | TNS |
+|---|---|---|
+| 0.05 | 1.371E7 | −1602397 |
+| 0.10 | 1.375E7 | (route incomplete) |
+| 0.20 | 1.388E7 | −1600346 |
+**(a) --timing_force_frac auto-calibration WORKS**: HPWL no longer balloons (≈cold 1.375E7, vs 1.894E7
+at fixed scale=1.0) → the frozen rule "timing force = frac·WL force" is design-invariant (R25 fix
+validated mechanically). **(b) swerv is NOT a valid timing substrate**: clock=3.4ns, TNS −1.6M ns
+(~a full clock period violated at EVERY endpoint) → grossly over-constrained, timing is placement-
+INSENSITIVE (est-timing ≈ cold, flat) — like ASAP7-synfree. swerv dropped as a route-awareness case;
+need a 3rd design with SANE, placement-improvable timing (TNS ~k-range like ariane/bp_fe). NEXT:
+re-run ariane+bp_fe {est,union} under the FROZEN auto-cal rule (frac=0.1) to confirm union still beats
+est design-invariantly (codex flaw-2); find a valid 3rd design (relax swerv clock, or bp_be/ariane136).
