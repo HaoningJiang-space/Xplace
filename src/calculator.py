@@ -1,6 +1,6 @@
 import torch
 from .param_scheduler import ParamScheduler
-from .core import merged_wl_loss_grad, merged_wl_loss_grad_timing
+from .core import merged_wl_loss_grad, merged_wl_loss_grad_timing, detour_timing_grad
 
 def apply_precond(mov_node_pos: torch.Tensor, ps: ParamScheduler, args):
     if not args.use_precond:
@@ -80,7 +80,19 @@ def calc_obj_and_grad(
                     conn_node_grad_by_timing = conn_node_grad_by_timing * (tfrac * wl_n / tm_n)
             mov_node_pos.grad[mov_lhs:mov_rhs] += conn_node_grad_by_timing[mov_lhs:mov_rhs]
             wl_loss += wl_loss_timing
-            
+
+            # Level-A differentiable route-aware timing term (IMPLICIT_DIFF_TIMING.md §9):
+            # additive ∂[Σ w_n·HPWL_n·(1+α·ρ_n)]/∂x — tests whether a differentiable
+            # routed-length (detour) signal beats the frozen route-blind HPWL force. Gated;
+            # inert unless --detour_timing_weight > 0. Costs O(#critical nets) (w_n sparse).
+            if getattr(args, "detour_timing_weight", 0.0) > 0 and getattr(data, "net_criticality", None) is not None:
+                mov_count = mov_rhs - mov_lhs
+                g_detour = detour_timing_grad(
+                    conn_node_pos[:mov_count], conn_node_pos[mov_count:], data,
+                    alpha=getattr(args, "detour_alpha", 2.0),
+                )
+                mov_node_pos.grad[mov_lhs:mov_rhs] += args.detour_timing_weight * g_detour
+
         if ps.enable_sample_force:
             if ps.iter > 3 and ps.iter % 20 == 0:
                 # ps.iter > 3 for warmup
