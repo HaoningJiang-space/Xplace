@@ -113,3 +113,34 @@ The §6 "monotonic regression" was dominated by OVER-PULL (force not matched). S
 3. **HIGH-detour design** (the real test, DETOUR_EXPERIMENT §7.3) — only there can the detour lever show
    strong headroom; ariane is structurally low-detour.
 4. Tier-1 proxy correlation still wanted (needs per-net routed length dump — add to backend tcl).
+
+## 10. MULTI-SEED DECIDER (2026-06-18) — +1.4% was NOISE; detour FORCE settled negative on ariane
+base vs arc w=0.002, seeds 0/1/2, oracle routed scale 1.0:
+| seed | base droute_TNS | arc002 droute_TNS |
+|---|---|---|
+| 0 | −2400.98 | −2398.22 |
+| 1 | −2425.09 | −2451.70 |
+| 2 | −2255.14 | −2414.54 |
+| **mean** | **−2360.4** | **−2421.5** (worse ~2.6%) |
+
+- The single-seed +1.4% (§8) **did NOT replicate**. base seed-variance is large (−2255..−2425, range
+  170) → ±1.4% is sub-noise. Across seeds the detour force is net WORSE (−2421 vs −2360).
+- **DEFINITIVE:** the differentiable detour FORCE (net + arc) has no usable headroom on ariane —
+  the 3rd independent confirmation (R15 RC-magnitude, R18 4%-of-TNS, now Level-A force) that the
+  detour-MAGNITUDE lever does not help on this (low-detour) substrate. #3 multi-seed earned its keep:
+  a single-seed marginal flipped to a multi-seed negative — exactly why we never conclude from one seed.
+
+## 11. PIVOT (the insight the negative forces)
+The thesis has shown 3×: the route-aware value is the criticality **RANKING**, not a magnitude/force.
+The detour term is a FORCE → it failed, as predicted. So the differentiable route-response should
+refine **WHICH arcs are routed-critical** (the ranking), NOT pull them geometrically. Reframes the use
+of the IFT route-response gradient (IMPLICIT_DIFF_TIMING.md): from a force `κ·∂ℓ/∂x` to a **ranking
+signal** — `∂(routed criticality)/∂x` driving which arcs the timer marks critical. This aligns the
+differentiable machinery with the ONLY lever shown to work. Two honest paths forward:
+  (a) **High-detour design**: the detour FORCE can only be fairly tested where detour is a large TNS
+      fraction (ariane is structurally low-detour). Until such a substrate exists, force/IFT is moot.
+  (b) **Route-response → ranking** (preferred, aligns with the winning lever): use a differentiable
+      routed-criticality predictor to refine the union ranking online (the R29/+5.6% thread), not a
+      detour force. This is the deployable predictor (UNIFICATION/P-gate) for the PROVEN lever.
+Decision: park the detour-FORCE/IFT-as-force line (settled negative on the only available substrate);
+redirect the differentiable effort to the route-response-as-RANKING-refiner, which serves the proven +5.6%.
