@@ -240,9 +240,10 @@ NEXT (SOTA): EMA damping + multi-design + the single-run in-loop version (Approa
 | iter | criticality | post-route TNS |
 |---|---|---|
 | k0 | none (cold) | −98519 |
-| k1 | k0 routed | **−81906 (+16.9%)** |
-| k2,k3 | iterated | (running) |
-Online route-aware iteration improves post-route TNS by **+16.9%** on bp_fe (vs +9.8% on ariane) —
+| k1 | k0 routed | −81906 (+16.9%) |
+| k2 | k1 routed | **−66841 (+32.2% vs cold)** |
+| k3 | k2 routed | −72070 (mild oscillation) |
+Online route-aware iteration improves post-route TNS by **+32.2%** (best k2) on bp_fe (vs +9.8% on ariane) —
 the method GENERALIZES across designs, and the gain is even larger here. (bp_fe bridge: bpfe.json +
 xplace_backend_bpfe.tcl; 2_floorplan.odb → bpfe_place_input.def.) NOTE: bp_fe cold = no-timing;
 ariane cold = est-timing — to fully match, also measure bp_fe est-timing baseline (TODO). Trajectory
