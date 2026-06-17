@@ -39,24 +39,15 @@ def calc_obj_and_grad(
             mov_route_grad, mov_congest_grad, mov_pseudo_grad = route_fn(
                 mov_node_pos, mov_node_size, expand_ratio, constraint_fn
             )
-            # TERM-2 prototype (PROTOTYPE.md): timing-weighted congestion force. Scale the
-            # per-node route (congestion) force by (1+alpha*node_criticality), so timing-critical
-            # cells get pushed out of congestion harder (route-aware DENSITY lever). node_crit =
-            # max over the node's pins of per-net criticality; cached (oracle criticality is static).
-            # NOTE: route_fn may return the CACHED mov_route_grad tensor; scale OUT-OF-PLACE so we
-            # never mutate the cache (in-place would re-scale it every iter -> exponential blowup).
-            if getattr(ps, "timing_route_weight", 0.0) > 0 and getattr(data, "net_criticality", None) is not None:
-                if getattr(data, "node_criticality", None) is None:
-                    pin_net_crit = data.net_criticality[data.pin_id2net_id.long()]
-                    nc = torch.zeros(data.num_nodes, device=mov_node_pos.device, dtype=torch.float32)
-                    nc.scatter_reduce_(0, data.pin_id2node_id.long(), pin_net_crit, reduce="amax", include_self=True)
-                    data.node_criticality = nc
-                    if data.node_criticality[mov_lhs:mov_rhs].max() > 0:
-                        print("[TERM-2] timing-weighted route force ON: alpha=%.3f, crit cells=%d/%d, crit[max]=%.3f" % (
-                            ps.timing_route_weight, int((data.node_criticality[mov_lhs:mov_rhs] > 0).sum()),
-                            mov_rhs - mov_lhs, float(data.node_criticality[mov_lhs:mov_rhs].max())))
+            # TERM-2 v1 (ANALYSIS_TERM2.md): the per-BIN concentration is done in get_route_force
+            # (route_gradmat is multiplied by the critical-corridor map). Here we additionally push
+            # only the NON-critical AGGRESSORS: scale the per-node force by (1-node_crit) so critical
+            # cells are NOT moved (keep the critical net compact) while non-critical cells are cleared
+            # out of the critical corridor. This is ESSENCE.md's "clear corridor, don't pull". Scale
+            # OUT-OF-PLACE (route_fn may return the cached mov_route_grad tensor).
+            if getattr(ps, "timing_route_weight", 0.0) > 0 and getattr(data, "node_criticality", None) is not None:
                 tw_scale = torch.ones((mov_route_grad.shape[0], 1), device=mov_route_grad.device, dtype=mov_route_grad.dtype)
-                tw_scale[mov_lhs:mov_rhs, 0] = 1.0 + ps.timing_route_weight * data.node_criticality[mov_lhs:mov_rhs]
+                tw_scale[mov_lhs:mov_rhs, 0] = (1.0 - data.node_criticality[mov_lhs:mov_rhs]).clamp(min=0.0)
                 mov_route_grad = mov_route_grad * tw_scale
             mov_node_pos.grad += mov_route_grad * ps.route_weight
             mov_node_pos.grad += mov_congest_grad * ps.congest_weight

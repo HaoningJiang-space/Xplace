@@ -194,6 +194,34 @@ def get_route_force(
         dmd_map, wire_dmd_map, via_dmd_map, cap_map = map_raw
         dmd_map2d, wire_dmd_map2d, via_dmd_map2d, cap_map2d = map_2d
         # ------------------------------------------------------------
+        # TERM-2 v1 (ANALYSIS_TERM2.md): CONCENTRATE the congestion force on timing-critical
+        # corridors. Build a per-bin criticality map (splat per-node criticality onto GR bins) and
+        # multiply route_gradmat by it -> the force acts in critical bins and ~0 elsewhere, so it
+        # does NOT globally over-spread (rf0's harm). This is the real TERM-2 (per-BIN price pi_b),
+        # not v0's wrong per-node scaling. Downstream conn/cell forces both inherit it.
+        if getattr(ps, "timing_route_weight", 0.0) > 0 and getattr(data, "net_criticality", None) is not None and route_gradmat is not None:
+            if getattr(data, "node_criticality", None) is None:
+                pin_net_crit = data.net_criticality[data.pin_id2net_id.long()]
+                _nc = torch.zeros(data.num_nodes, device=mov_node_pos.device, dtype=torch.float32)
+                _nc.scatter_reduce_(0, data.pin_id2node_id.long(), pin_net_crit, reduce="amax", include_self=True)
+                data.node_criticality = _nc
+            nbx, nby = route_gradmat.shape[1], route_gradmat.shape[2]
+            _ulx, _uly = routeforce.gcell_steps()
+            _ulx = _ulx / data.site_width; _uly = _uly / data.site_width
+            _pos = mov_node_pos[mov_lhs:mov_rhs]
+            _crit = data.node_criticality[mov_lhs:mov_rhs]
+            _bx = (_pos[:, 0] / _ulx).long().clamp(0, nbx - 1)
+            _by = (_pos[:, 1] / _uly).long().clamp(0, nby - 1)
+            _crit_map = torch.zeros(nbx * nby, device=mov_node_pos.device, dtype=torch.float32)
+            _crit_map.scatter_add_(0, _bx * nby + _by, _crit)
+            _mx = _crit_map.max()
+            if _mx > 0:
+                _w = (_crit_map / _mx * ps.timing_route_weight).clamp(max=1.0).reshape(nbx, nby)
+                route_gradmat = route_gradmat * _w.unsqueeze(0)
+                if not getattr(ps, "_t2v1_logged", False):
+                    print("[TERM-2 v1] concentrate route force on critical corridors: crit bins=%d/%d, alpha=%.2f" % (
+                        int((_crit_map > 0).sum()), nbx * nby, ps.timing_route_weight))
+                    ps._t2v1_logged = True
         # 2) start force computation
         # 2.1) compute routing wire force
         conn_route_grad = conn_route_force(
