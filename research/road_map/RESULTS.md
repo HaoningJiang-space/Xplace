@@ -279,3 +279,17 @@ Coherent framework: *route-aware TDP helps ⟺ routing structurally distorts the
 **Better method (R23, implementing): SELECTIVE/BLENDED criticality** — trust routed only where it
 confidently diverges from estimated (e.g. crit = max(est, routed) or EMA blend), so high-divergence
 designs benefit and low-divergence designs fall back to estimated (no harm). Robust across designs.
+
+## R23 — ★★ ROBUST METHOD: normalized-criticality UNION blend generalizes (fixes R21)
+Blend = crit_n = max(est_crit_norm, routed_crit_norm), top-13k (critical if EITHER timer ranks it):
+| design | est | routed | **blended (norm-union)** |
+|---|---|---|---|
+| ariane | −2685 | −2421 | **−2390.6** (beats routed AND oracle −2401; +11% vs est, +8% vs --timing_opt −2600) |
+| bp_fe  | −63279 | −66841 | **−62045** (beats est; pure-routed REGRESSION −66841 ELIMINATED) |
+**Both designs improve, robustly.** Key insight upgrade: est and routed timers each MISS different
+true-critical nets; their UNION is more complete than either alone → blend beats pure-routed (and
+even the routed oracle) on ariane, and removes the divergence-noise regression on bp_fe. So the
+robust route-aware method is NOT "replace est with routed" (R21 fails) but "UNION est+routed
+criticality" (complementary information). This generalizes across the divergence axis (high ariane /
+low bp_fe). First robust, multi-design positive. (raw min-slack blend failed — must normalize per
+timer before union, else dominated by the more-pessimistic timer's scale.)
