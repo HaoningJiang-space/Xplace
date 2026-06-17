@@ -205,3 +205,17 @@ Clean design (codex): arms = {plain | fair estimated (top-K matched to oracle ca
 
 ## READING SO FAR
 Gate A + placement-controllability look **positive on aes (std-cell)**; the thesis stands or falls on (1) the same holding — ideally STRONGER — on the **macro/congested** design with seed-causality intact, and (2) Gate B utility (needs the bridge). No SOTA/win claim yet; this is mechanism+causality evidence, not the placement-improvement result.
+
+## R19 — ★ DE-CHEAT SUCCEEDS: online fixed-point iteration recovers the oracle (no routing-first)
+The +20% was an oracle (routed criticality requires routing first). Fixed-point iteration removes
+the cheat: cold-start from ESTIMATED criticality, then each placement uses the PREVIOUS route's
+routed criticality (available at place time). ariane, same back-end:
+| iter | criticality source | post-route TNS |
+|---|---|---|
+| k0 | estimated (pre-route cold start) | −2685 |
+| k1 | k0's ROUTED criticality (online, non-cheat) | **−2429** |
+| oracle (cheat upper bound) | baseline route criticality | −2401 |
+**ONE non-cheating iteration recovers the oracle within ~1% (−2429 vs −2401), +9.5% over the est
+cold start.** This resolves the circularity: a few place→route→re-weight rounds (industrial-style,
+deployable) claim essentially the full headroom. The +20% is REAL and ONLINE-achievable — not an
+oracle artifact. This is the first deployable positive result. (k2–k4 confirm fixed-point stability.)
