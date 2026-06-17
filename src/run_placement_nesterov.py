@@ -475,6 +475,17 @@ def run_placement_main_nesterov(args, logger):
                 net_crit[i] = 1.0 if v > 1.0 else v
                 matched += 1
         scale = float(args.oracle_timing_scale)
+        topk = int(getattr(args, "oracle_topk", 0))
+        if topk > 0:
+            # FORCE-MATCHED comparison: keep only the top-K most-critical nets, UNIFORM
+            # weight = scale. Then routed vs estimated arms differ ONLY in which nets are
+            # chosen (the ranking) at identical cardinality + magnitude => isolates
+            # route-awareness from force-norm/cardinality (codex R11-audit confound #2).
+            kth = min(topk, int((net_crit > 0).sum()))
+            if kth > 0:
+                thresh = torch.topk(net_crit, kth).values.min()
+                net_crit = (net_crit >= thresh).to(torch.float32) * (net_crit > 0).to(torch.float32)
+            logger.info("Oracle TOP-K mode: K=%d, nets kept=%d (uniform weight)" % (topk, int((net_crit > 0).sum())))
         tpw = (scale * net_crit[data.pin_id2net_id.long()]).to(torch.float32)
         data.gputimer = types.SimpleNamespace(timing_pin_weight=tpw)
         args._oracle_timing = True
