@@ -16,9 +16,29 @@ the honest baseline adopted in R28/R29 precisely because R28 found the metal3 es
 (metal3 R = 3.57e-3 but GR routes critical nets on metal6/7/8, ~19× lower R).
 
 **Recomputed consistently with the fair metal5 est, ariane's top-10% Jaccard is 0.517 — ABOVE the claimed
-0.4 threshold, and in the same band as the designs the law calls "low-gain":** aes 0.545, bp_multi 0.619,
-bp_be 0.666 (those table values' est source is unverified here — likely each design's own default est, so a
-fully fair cross-design table needs them ALL recomputed at a fair layer).
+0.4 threshold.** The other table values (aes 0.545, bp_multi 0.619, bp_be 0.666, bp_fe 0.963) are computed
+with each design's DEFAULT placement-est — VERIFIED: recomputing bp_fe default-est vs routed gives top-10%
+Jaccard 0.963, matching the table exactly. So **the 5-design table is internally consistent (all default-est);
+ariane IS uniquely below 0.4 in that consistent default-est metric.**
+
+## CORRECTED scope (after the bp_fe verification — the earlier "threshold law collapses" was OVERSTATED)
+The precise, verified situation is narrower and more nuanced than "the law collapses":
+1. The divergence TABLE is consistent (default-est across all 5 designs); ariane (0.231) is genuinely the
+   unique low-divergence design IN THAT METRIC.
+2. The ONLY mismatch is design-internal to ariane: its METRIC uses default(metal3)-est (0.231) but its GAIN
+   BASELINE uses fair metal5-est (+15.3%). **This mismatch is CONSERVATIVE, not inflating** — the gain is
+   measured against a STRONGER (fairer) baseline than the default est the trigger sees, so a default-est-using
+   deployed flow would see an *equal-or-larger* gain. So the mismatch does NOT cheat the +15%.
+3. The genuine residual concern: the TRIGGER value is est-sensitive (ariane 0.231 at default vs 0.517 at
+   fair). A clean law must commit to ONE est for both the trigger and the (re-measured) gain. **R29 evidence
+   REASSURES here:** fair-est placement (−2735) ≈ default-est placement (−2685) — switching to a
+   less-pessimistic est did NOT change the placement; only the ACTUAL ROUTED criticality gave the +15%. So
+   the gain mechanism is routed-criticality (robust to est choice), which SUPPORTS the law rather than
+   undermining it.
+4. Honest net: the **+15% is solid and arguably conservative**; the **"threshold 0.4" NUMBER is est-dependent
+   and must not be quoted without naming the est**; the law as a DIRECTION (ariane uniquely divergent under
+   the deployable default-est) holds. What's still needed: state the trigger's est explicitly, and ideally
+   confirm the direction survives if the whole table is recomputed at a fair est (others' fair-est unknown).
 
 ## Why it matters (tempers the "predictive law", does NOT touch the +15.3% gain)
 1. **The +15.3% gain stands** — it is union vs fair-est at 0-DRC signoff coupling (R33/R36), unaffected.

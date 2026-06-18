@@ -680,14 +680,25 @@ Recomputed ariane est-vs-routed top-K Jaccard with BOTH est timers vs the SAME r
 **The law's "ariane uniquely below the 0.4 threshold" uses the metal3/default est; the +15.3% gain uses the
 fair metal5 est (adopted in R28/R29 because metal3 is ~39× over-pessimistic). Recomputed consistently with
 the fair est, ariane is 0.517 — ABOVE 0.4, in the band of the "low-gain" designs (aes 0.545, bp_multi 0.619,
-bp_be 0.666).** So the threshold-law / ariane-outlier framing is NOT robust to the est choice: it separates
-ariane only with the pessimistic default est. The oracle-free TRIGGER is therefore partly a detector of "is
-the platform-default est badly miscalibrated here" (a layer/RC artifact, R28) — still arguably deployable
-(a deployed flow only has the default est), but it is internally INCONSISTENT to quote a metal3-est
-divergence next to a metal5-est gain. **The +15.3% gain is UNAFFECTED (union vs fair-est at signoff); only
-the "predictive threshold law" framing must be tempered** (recompute the 5-design table at ONE consistent
-est = each design's gain baseline, or withdraw "threshold 0.4"). Aligns with CODEX_CHAIN_REVIEW.md's
-"post-hoc classifier" worry. Full analysis: [DIVERGENCE_METRIC_CONSISTENCY.md](DIVERGENCE_METRIC_CONSISTENCY.md).
+bp_be 0.666).** CORRECTED (verified bp_fe default-est top-10% Jaccard = 0.963 = the table value exactly →
+the 5-design table IS internally consistent, all default-est; ariane 0.231 IS genuinely the unique low point
+in that metric). Precise scope, narrower than "the law collapses": (1) only ariane's METRIC (default-est,
+0.231) differs from ariane's GAIN BASELINE (fair metal5-est, +15.3%); (2) that mismatch is CONSERVATIVE —
+gain is vs a STRONGER baseline than the trigger's default est, so a deployed default-est flow sees an
+equal-or-larger gain (not a cheat); (3) the real residual = the trigger value is est-sensitive (0.231 default
+vs 0.517 fair), so a clean law must name ONE est for trigger+gain — but R29 (fair-est place −2735 ≈ default
+place −2685; only ROUTED crit gave +15%) shows the gain mechanism is routed-criticality, robust to est choice
+→ SUPPORTS the law. **Honest net: +15% is solid and arguably conservative; the "threshold 0.4" NUMBER is
+est-dependent and must not be quoted without naming the est; the DIRECTION (ariane uniquely divergent under
+the deployable default-est) holds.** Still needed: name the trigger's est + recompute the table at fair est.
+
+★ MEASUREMENT-HARNESS AUDIT (user-confirmed, 不失真): the TRUE R33/R36 signoff numbers live in
+`ariane_infl_dr_true_results.txt` / `backend_infldr2_*` (fair-est −972.5, routed −832.0, union −823.7,
+timing_opt w0.02 −968.9; all 0-DRC, no DRT_FAIL). The older `ariane_inflate_fidelity_results.txt` is the
+STALE `DR_TNS == GR_TNS` bug output (pre-SPEF-fix) — **must NOT be cited.** +15% is NOT a collector false
+positive. Backport the bp_fe driver's DRT_FAIL/DRC/oracle-load gates to the ariane collector. Aligns with
+CODEX_CHAIN_REVIEW.md's "post-hoc classifier" worry. Full analysis (with the self-correction):
+[DIVERGENCE_METRIC_CONSISTENCY.md](DIVERGENCE_METRIC_CONSISTENCY.md).
 
 Side finding (codex #5, verified, `norm_check.py`): the ariane union top-13k SET is normalization-sensitive
 — own-norm vs rank-percentile Jaccard 0.79, own-norm vs raw-ns 0.60 → **20–40% of the union set is a
