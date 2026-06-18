@@ -478,7 +478,13 @@ def run_placement_main_nesterov(args, logger):
         # TERM-2 prototype: expose the GRADED per-net criticality (before any top-K collapse)
         # to the timing-weighted route force (calculator.py). Static (oracle) => cache-safe.
         data.net_criticality = net_crit.clone()
+        # --oracle_topfrac (MECHANISM_AUTOPSY #3, cross-design FAIRNESS): keep the top FRACTION of
+        # ALL nets by criticality (constant fraction → comparable across designs with different net
+        # counts; supersedes fixed --oracle_topk which is a different fraction per design). 0 = off.
+        topfrac = float(getattr(args, "oracle_topfrac", 0.0))
         topk = int(getattr(args, "oracle_topk", 0))
+        if topfrac > 0:
+            topk = max(1, int(topfrac * data.num_nets))
         if topk > 0:
             # FORCE-MATCHED comparison: keep only the top-K most-critical nets, UNIFORM
             # weight = scale. Then routed vs estimated arms differ ONLY in which nets are
@@ -488,8 +494,19 @@ def run_placement_main_nesterov(args, logger):
             if kth > 0:
                 thresh = torch.topk(net_crit, kth).values.min()
                 net_crit = (net_crit >= thresh).to(torch.float32) * (net_crit > 0).to(torch.float32)
-            logger.info("Oracle TOP-K mode: K=%d, nets kept=%d (uniform weight)" % (topk, int((net_crit > 0).sum())))
+            logger.info("Oracle TOP-K mode: K=%d (frac=%.3f), nets kept=%d (uniform weight)" % (topk, topfrac, int((net_crit > 0).sum())))
         tpw = (scale * net_crit[data.pin_id2net_id.long()]).to(torch.float32)
+        # --oracle_pin_weight_mode (MECHANISM_AUTOPSY #2, the DECISIVE mechanism test):
+        #   broadcast  = current; a net's weight applied to ALL its pins → high-fanout nets get more
+        #                TOTAL pull (a geometry/fanout bias that could explain the +15% w/o any timing).
+        #   fanout_norm = divide each net's weight by its degree → TOTAL pull per net ∝ 1, fanout-neutral.
+        #                If the gain SURVIVES fanout_norm → it is about WHICH nets (timing-like); if it
+        #                COLLAPSES → the gain was fanout/geometry. (user-prescribed autopsy.)
+        pw_mode = str(getattr(args, "oracle_pin_weight_mode", "broadcast"))
+        if pw_mode == "fanout_norm":
+            degree = torch.bincount(data.pin_id2net_id.long(), minlength=data.num_nets).to(torch.float32).clamp(min=1.0)
+            tpw = (tpw / degree[data.pin_id2net_id.long()]).to(torch.float32)
+            logger.info("Oracle pin_weight_mode=fanout_norm (per-net pull fanout-neutral)")
         data.gputimer = types.SimpleNamespace(timing_pin_weight=tpw)
         args._oracle_timing = True
         logger.info("Oracle timing_pin_weight: matched %d/%d nets, max_neg=%.4f ns, scale=%.3f, pins>0=%d, tpw[min..max]=%.4f..%.4f" % (
