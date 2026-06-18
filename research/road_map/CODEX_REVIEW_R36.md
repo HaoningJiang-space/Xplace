@@ -36,6 +36,23 @@ not yet bulletproof**. Three issues, each with the test that settles it. Claims 
   est arms fail on the SAME immovable endpoints, the tie is just a floor.
 - **Tempered claim:** the tie is *consistent with* source-dominance but is not proof; the crossed matrix
   is required. This makes Option 2 (inject routed crit → GPUTimer) a PRIORITY, not optional.
+- **★ DEEPER (first-principles, reading `timing_opt.py::step`): the matrix is PARTLY PRE-FILLED, and it
+  REFUTES "source not actuation".** `step()` computes per-pin weight from the LIVE STA on ESTIMATED RC
+  (slacks/delay_k/delay_1/pin_visited) via a 3-term EXPONENTIAL path formula. The ONLY way to feed it
+  routed criticality is `set_net_rc_mult` (routed RC into the model) — which is **exactly R15/R16**, and
+  R15/R16 HURT MONOTONICALLY (−2600→−2817→−2992 at GR; route-aware RC into the GPUTimer over-concentrates,
+  adds congestion). So the crossed matrix already reads:
+  | source | flat net-weight | GPUTimer exponential |
+  |---|---|---|
+  | est | −972 (fair-est) | −969 (`--timing_opt`) |
+  | routed | **−832 (R33) BEST** | ≈ R15/R16 (HURT) |
+  → The honest claim is NOT "source not actuation". It is: **routed criticality is only harvestable with a
+  GENTLE (flat, top-K) actuation; the production EXPONENTIAL path-pull squanders it (over-concentrates →
+  congestion, R15).** BOTH source and actuation matter, in a specific interaction: (routed source × gentle
+  actuation) is the unique winning cell. This is a STRONGER, more mechanistic claim than the overclaimed
+  "source not actuation" — and it explains why production `--timing_opt` (exponential) can't naively
+  benefit from route-awareness. **Option 2's clean test = the (routed × exponential) signoff cell to
+  confirm R15's GR-fidelity negative holds at signoff; R15 strongly predicts it does.**
 
 ## Issue 3 — the divergence law + deployability are UNDERPOWERED
 - **Critique:** two anchor designs (ariane high-div, bp_fe low-div) do not establish a law; bp_fe may
