@@ -733,3 +733,24 @@ CAVEATS: P3 routing-only Jaccard is on the cell-inflated `infl_fairest` placemen
 rows are on density-1.0 `dms_base_s0` — different placement, but the 0.982 routing-only overlap is
 overwhelming and placement-robust). VCERF's "route feedback" premise needs a design where post-CTS-est vs
 routed Jaccard is genuinely LOW; ariane is NOT that design once measured same-stage.
+
+## R41 — autopsy completion: COUPLING adds a modest mid-tier criticality signal; GEOMETRY adds ~none
+Coupling-criticality test (`xplace_backend_ariane_coupling_crit.tcl` on cell-inflated infl_fairest, full
+detailed_route→0 DRC→OpenRCX→SPEF), Jaccard vs the post-CTS pre-route est, contrasted with R40's GR row:
+| routed-criticality source vs post-CTS-est | top-5% | top-10% Jaccard |
+|---|---|---|
+| GR (geometry only, `-global_routing`) [R40] | 0.987 | 0.982 |
+| **DR + OpenRCX coupling** | **0.971** | **0.767** |
+Coupling DR: 0 DRC, no DRT_FAIL, signoff TNS −972.47 (= R33 fair-est exactly — infl_fairest IS that arm).
+**Reading:** routing GEOMETRY reorders the critical set by ~2% (GR 0.982); adding COUPLING reorders ~23% of
+the top-10% set (0.767) but only ~3% of the top-5% (0.971) — i.e. coupling shifts a modest MID-TIER band, not
+the most-critical nets. **Crucial:** the actual experiment arms used GR-fidelity routed criticality
+(`ar_base_netslack` = `estimate_parasitics -global_routing`, no coupling), which ≈ post-CTS-est (0.982). So
+the +15.3% CANNOT be a coupling-criticality effect — the arms never saw coupling crit. **Autopsy verdict
+(R40+R41+P1+R39): the +15.3% signoff TNS is REAL but the "route-feedback reorders the true critical set"
+mechanism is NOT what produced it — the GR-routed criticality the arms used is 98% a post-CTS estimate, the
+"divergence" is the CTS clock-tree stage, and the matched-force gain vanishes (concurrent P1). A NARROW future
+angle survives: COUPLING-aware routed criticality (not GR, not used by the current arms) does reorder ~23% of
+the top-10% set — a coupling-criticality source is the only place route-feedback could add real timing info on
+ariane, and even there it is modest and mid-tier.** Pending the concurrent `ariane_signoff_fair.sh` (does any
+gain survive matched force + fanout_norm at signoff) for the final gain verdict.
