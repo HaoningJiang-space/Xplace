@@ -37,12 +37,19 @@ for arm in fairest routed union; do
   echo "DR-LAUNCH $arm pid=${PIDS[$arm]} $(date +%H:%M:%S)"
 done
 for arm in fairest routed union; do wait ${PIDS[$arm]}; echo "DR-WAITED $arm $(date +%H:%M:%S)"; done
-# --- 3. collect ---
-RES=$B/ariane_inflate_fidelity_results.txt; echo "arm gr_tns dr_tns dr_wns" > $RES
+# --- 3. collect (HARDENED per codex #9 + user harness-audit: gate on DR-DONE / DRT_FAIL / DRC, and
+#         auto-detect the stale DR_TNS==GR_TNS inert-extraction bug that produced the OLD bogus results) ---
+RES=$B/ariane_inflate_fidelity_results.txt; echo "arm gr_tns dr_tns dr_wns valid drc_viol" > $RES
 for arm in fairest routed union; do
-  grt=$(grep DROUTE_GR_TNS $B/backend_infldr_$arm.log|awk '{print $2}')
-  drt=$(grep DROUTE_DR_TNS $B/backend_infldr_$arm.log|awk '{print $2}')
-  drw=$(grep DROUTE_DR_WNS $B/backend_infldr_$arm.log|awk '{print $2}')
-  echo "$arm $grt $drt $drw" >> $RES
+  L=$B/backend_infldr_$arm.log
+  grt=$(grep DROUTE_GR_TNS $L|awk '{print $2}')
+  drt=$(grep DROUTE_DR_TNS $L|awk '{print $2}')
+  drw=$(grep DROUTE_DR_WNS $L|awk '{print $2}')
+  done_ok=$(grep -c BACKEND_DR_DONE $L); drt_fail=$(grep -c DRT_FAIL $L)
+  viol=$(grep -iE "Number of violations" $L|tail -1|grep -oE "= [0-9]+"|tr -d '= ')
+  valid=OK; [ "$done_ok" = 0 ] && valid=NO_DONE; [ "$drt_fail" != 0 ] && valid=DRT_FAIL
+  # STALE-bug guard: if DR coupling TNS == GR TNS exactly, extract_parasitics didn't reach STA (no SPEF readback)
+  [ -n "$grt" ] && [ "$drt" = "$grt" ] && valid=STALE_DR==GR
+  echo "$arm $grt $drt $drw $valid viol=${viol:-?}" >> $RES
 done
 echo "ARIANE_INFLATE_FIDELITY_DONE"; cat $RES
