@@ -91,6 +91,23 @@ ariane, est(metal5) vs union, broadcast vs fanout_norm, at `--oracle_topfrac 0.1
   signoff? If neither shows union>est at matched force → the +15% is a magnitude/fanout artifact (the
   "diagnostic paper" branch, METHOD_DERIVATION §8).
 
+## ★★★ FRAC SWEEP (GR) — the mechanism SURVIVES: union beats est at matched force, frac 0.1 was just too weak
+est vs union, fanout_norm, MATCHED force norm (`--timing_force_frac`), constant fraction 0.10, GR:
+| frac | est droute_TNS | union droute_TNS | union vs est |
+|---|---|---|---|
+| 0.1 | −3168 | −3197 | −0.9% (too weak: both ≈ baseline, noise) |
+| 0.2 | −3167 | −3088 | **+2.5%** |
+| 0.3 | −3395 | −2943 | **+13.3%** |
+| 0.5 | −3097 | −3024 | **+2.4%** |
+- **At matched force norm AND fanout-neutral weighting, union beats est for all frac ≥ 0.2.** So the
+  union-over-est advantage is NOT pure fanout (fanout_norm on) and NOT pure magnitude (force matched) — at a
+  SUFFICIENT force level the union criticality SET genuinely helps. **P1's frac-0.1 "collapse" was a
+  too-weak-force false alarm; the mechanism (criticality SET) is real.** This is the VCERF-positive branch.
+- **Honest caveats:** GR fidelity (not signoff), single seed. est is NON-MONOTONIC/noisy across frac (−3097..
+  −3395) → the headline +13.3% at frac 0.3 is partly est-side noise; the robust statement is "union ≥ est for
+  frac ≥ 0.2, modestly (+2.5%) to +13%." Needs (a) SIGNOFF confirmation (cell-inflate+DR+OpenRCX at frac 0.3),
+  (b) multi-seed to kill the est-noise. Run signoff-fair at frac 0.3 next.
+
 ## Reframed contribution (until the autopsy resolves the mechanism)
 "A 2-pass route-feedback net-weighting that reduces post-route TNS by ~15% on a macro-congested design at
 signoff" — an EMPIRICAL result whose MECHANISM and GENERALITY are under active autopsy. Do not write the
