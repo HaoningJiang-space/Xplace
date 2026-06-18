@@ -596,3 +596,15 @@ violations** (detailed_route opt iterations 105357→…→0). Clean head-to-hea
 - **Status:** ariane now has a clean, signoff-fidelity, 0-DRC, +15% win over BOTH the academic baseline
   (fair-est) AND production Xplace-Timing (`--timing_opt`). Driver: `ariane_timingopt_forcematch_sweep.sh` +
   `ariane_fmto_dr.sh`. Result file `ariane_fmto_dr_results.txt`.
+- **★ codex adversarial review (CODEX_REVIEW_R36.md) — claims TEMPERED (results stand, not yet bulletproof):**
+  (1) The "looser-yet-better proves area didn't help" argument is WEAK — union's looser HPWL may itself
+  buy the lower congestion/coupling/detour that helps timing; and `--timing_opt` was detuned only via
+  `timing_init_weight`, not the full routability knob set → R36 is a first datapoint, NOT a Pareto proof.
+  Need a 0-DRC signoff PARETO sweep (both methods × density knobs) at matched density/wirelength/via/
+  congestion. (2) The fair-est≈`--timing_opt` tie is at ONE detuned point on ONE design → CONSISTENT WITH
+  source-dominance but NOT proof (could be a floor/coincidence); the clean proof needs the 2×3 crossed
+  matrix (source×formula), i.e. INJECT routed/union criticality into the GPUTimer (Option 2). (3) 2 designs
+  ≠ a law; deployability is a stale-label (pass-1→pass-2) transfer → need 4–6 designs + cross-base/fixpoint
+  convergence. **The ONE un-criticized clean result remains R33 (+15.3%, source within flat net-weight,
+  iso-mechanism iso-HPWL).** Roadmap reordered: bp_be_top (running) → GPUTimer injection (Option 2) →
+  Pareto sweep → cross-base convergence.
