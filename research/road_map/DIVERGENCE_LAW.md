@@ -32,6 +32,23 @@ metric: intermediate gain ⇒ Spearman is the gain-predictor + law calibrated; ~
 needs near-total ranking disagreement). Either outcome sharpens the law. Macro count (~30) is between bp_be
 (12) and ariane (132), consistent with divergence ∝ macro-congestion.
 
+**★★ RIGOROUS LAW (consistent top-10% critical-set Jaccard, 5 designs) — the gain has a THRESHOLD ~0.4:**
+| design | top-10% Jaccard(est,routed) | #macros | route-aware gain |
+|---|---|---|---|
+| **ariane133** | **0.231** | 132 | **+15.3% signoff** |
+| aes | 0.545 | 0 | ~0 expected (R18 ρ≈0); unmeasured |
+| bp_multi_top | 0.619 | ~30 | ~0 (R37, GR) |
+| bp_be_top | 0.666 | ~12 | unmeasured |
+| bp_fe_top | 0.963 | few | ~0 signoff (R35) |
+(Computed at a CONSISTENT top-10%-of-nets fraction so cross-design Jaccard is apples-to-apples — the earlier
+mixed-K values were not comparable.) **The gain appears ONLY below Jaccard ≈0.4 (ariane alone); the 0.5–0.97
+range all give ~0. So the law is a THRESHOLD/NONLINEAR phenomenon, not a smooth gradient:** routing must
+reorder MOST of the critical set (≳60–70%) before re-placing on routed criticality helps — modest reordering
+(Jaccard 0.5–0.7) is dominated by the shared critical nets, so the placement barely changes. Mechanism: only
+heavy macro-congestion (ariane 132 macros → long nets forced through detour + layer reassignment) crosses the
+threshold. **Honest scope: the method helps in a NARROW high-congestion regime; the Jaccard trigger (oracle-free
+at pass-1) correctly identifies it and skips route-awareness otherwise.**
+
 **★ KEY FINDING (4 designs): ariane is the LONE high-divergence OUTLIER; the regime is HEAVY MACRO-CONGESTION.**
 Three of four NanGate45 designs cluster at Spearman ~0.95–0.97 (est≈routed criticality ranking); only ariane
 (132+ SRAM macros) is low-Spearman 0.19. The discriminator is **macro count / congestion**: ariane's 132 fixed
