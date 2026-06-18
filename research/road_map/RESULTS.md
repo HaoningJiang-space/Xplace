@@ -559,3 +559,40 @@ not "always add routing".
   of the 2 pass-1 CSVs) is computable oracle-free → adaptive rule: apply route-awareness only when divergence
   is high. **Confidence-weighted union** (`blend_crit_conf.py`, c=est+(1−a)·max(0,routed−est)) operationalizes
   this in one formula (ariane a=0.19→≈union; bp_fe a=0.97→≈est) — staged to test on both anchors.
+
+## R36 — ★★★ CLEAN #12 vs PRODUCTION `--timing_opt` at SIGNOFF: union +15.0%, BOTH 0-DRC (R34 confound RESOLVED)
+R34 parked the `--timing_opt` head-to-head as confounded (it over-packs at default weight → won't route).
+RESOLUTION = force-match it DOWN (SOTA_COMPARISON_DESIGN.md Option-1): sweep `--timing_init_weight`
+{0.05,0.03,0.02,0.01,0.005} with `--use_cell_inflate`. Finding: **`--timing_opt` HPWL SATURATES at ~2.64e7**
+(0.05→2.463, 0.03→2.522, 0.02→2.649, 0.01→2.637) — even the weakest pull can't reach the route-aware union
+arm's routability-grade 2.819e7; production timing pull is structurally ~6% denser. Routed the loosest
+(w=0.02, HPWL 2.649e7, best routability) through the signoff DR+OpenRCX backend. **It DID converge to 0 DRC
+violations** (detailed_route opt iterations 105357→…→0). Clean head-to-head at signoff (all `--use_cell_inflate`,
+0 DRC, OpenRCX coupling):
+| arm (criticality, actuation) | DR-coupling TNS | DR WNS | HPWL |
+|---|---|---|---|
+| fair-est (est crit, flat net-weight) | −972.5 | −0.545 | ~2.82e7 |
+| **`--timing_opt` (est crit, path-based exp pull)** | **−968.9** | −0.572 | 2.649e7 |
+| routed (route-aware crit, flat net-weight) | −832.0 | −0.514 | — |
+| **union (route-aware crit, flat net-weight)** | **−823.7** | −0.512 | 2.819e7 |
+**TWO findings:**
+1. **union beats production `--timing_opt` by +15.0% post-route coupling TNS** ((968.9−823.7)/968.9) and
+   +10.5% WNS, BOTH at 0 DRC + signoff coupling fidelity. routed beats it +14.1%. **First clean
+   SOTA-vs-production datapoint** — the core thesis claim at signoff, vs Xplace's OWN production timing placer.
+2. **The two ESTIMATED-criticality methods TIE** (fair-est −972.5 ≈ `--timing_opt` −968.9, within 0.4%)
+   despite completely different actuation (flat net-weight vs exponential path-based GPUTimer pull). This
+   **isolates the contribution to the criticality SOURCE, not the actuation** (SOTA_COMPARISON_DESIGN.md §2
+   prediction confirmed): swapping est→routed/union gives +15%, swapping the force formula gives ~0.
+- **HPWL honesty:** `--timing_opt` is DENSER (2.649 vs union 2.819) yet times WORSE — its tightness is a
+  wirelength edge that did NOT buy timing. So the +15% is not a "union spent more area" artifact; the looser
+  route-aware placement wins timing despite (not because of) area. union↔fair-est is iso-mechanism iso-HPWL
+  (the clean +15.3%); union↔`--timing_opt` has a 6% HPWL gap that favors `--timing_opt` on congestion yet it
+  still loses on timing.
+- **Caveat (honest):** w=0.02 is `--timing_opt`'s loosest routable point; a DR sweep across weights could find
+  a marginally better routable `--timing_opt` TNS, but its DEFAULT (0.05) does not route at all → −968.9 is a
+  fair representative of its routable operating point. **Still 1 design (ariane);** STRONG SOTA (#12) needs a
+  2nd high-divergence design (bp_fe/aes are low-divergence negative controls). Next: bp_be_top (fresh ORFS,
+  macro-heavy high-divergence candidate) + Efficient-TDP/C3PO.
+- **Status:** ariane now has a clean, signoff-fidelity, 0-DRC, +15% win over BOTH the academic baseline
+  (fair-est) AND production Xplace-Timing (`--timing_opt`). Driver: `ariane_timingopt_forcematch_sweep.sh` +
+  `ariane_fmto_dr.sh`. Result file `ariane_fmto_dr_results.txt`.
