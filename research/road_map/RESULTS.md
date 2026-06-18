@@ -532,3 +532,30 @@ stays at R29's GR-fidelity (+5.6%, density-1.0, where --timing_opt routed via GR
 positive is R33 (mechanism-matched, +15.3% vs fair-est). NEXT for #12: 2nd valid design at signoff (bp_fe
 cell-inflate arms), and a force-strength-matched --timing_opt comparison (lower timing_init_weight so its
 density ≈ the net-weight arms) if a direct vs-production number is needed.
+
+## R35 — ★★★ 2nd-DESIGN NEGATIVE CONTROL at SIGNOFF: bp_fe confirms the DIVERGENCE LAW (DIVERGENCE_LAW.md)
+The bp_fe analog of R33: place 3 arms (fairest/routed/union) with `--use_cell_inflate` + their criticality,
+detailed-route + OpenRCX coupling (SPEF-correct backend). bp_fe is the LOW-DIVERGENCE design — quantified:
+**Spearman(est,routed crit)=0.967, top-13k Jaccard=0.937** (vs ariane 0.192 / 0.244). Prediction (pre-
+registered in `bpfe_inflate_signoff.sh`): route-awareness carries ~no new info → union ≈ flat vs fairest.
+| arm (criticality) | GR-estimate TNS | **TRUE DR+OpenRCX-coupling TNS (signoff)** |
+|---|---|---|
+| fairest (est) | −93567 | **−17885.1** |
+| routed | −100270 | **−17848.3** (marginally BEST) |
+| union (est∪routed) | −96267 | **−17900.6** |
+**All 3 arms TIED within 0.3% at signoff (range 52 TNS / 17885) → route-awareness gives ~0 gain on
+low-divergence bp_fe, EXACTLY as the divergence law predicts.** Contrast ariane (high-divergence) union
++15.3%. This is the confirming NEGATIVE CONTROL — it makes the thesis a PREDICTIVE LAW (gain ∝ 1−agreement),
+not "always add routing".
+- **GR→signoff washout:** at GR estimate routed looked notably worse (−100270 vs fairest −93567), but at
+  signoff all tied (routed marginally best). GR was ~5× pessimistic on bp_fe (worse than ariane's 3.4×);
+  the GR-stage apparent routed-harm was a pessimism artifact, gone at coupling-aware signoff.
+- **No harm (important):** route-awareness does NOT meaningfully hurt even where it doesn't help (union
+  −0.1% vs fairest = noise). So raw union is SAFE at signoff here, though it added nothing.
+- **Two-point divergence law @ signoff:** ariane (Jaccard 0.244) → +15.3%; bp_fe (Jaccard 0.937) → ~0.
+  Direction clean; a 3rd design at intermediate divergence would calibrate the curve (DIVERGENCE_LAW §4).
+- **Deployability (DEPLOYABILITY.md):** both designs use the 2-pass place→route→re-place flow with
+  criticality from an INDEPENDENT base route (no oracle, no leak). The divergence trigger (Spearman/Jaccard
+  of the 2 pass-1 CSVs) is computable oracle-free → adaptive rule: apply route-awareness only when divergence
+  is high. **Confidence-weighted union** (`blend_crit_conf.py`, c=est+(1−a)·max(0,routed−est)) operationalizes
+  this in one formula (ariane a=0.19→≈union; bp_fe a=0.97→≈est) — staged to test on both anchors.
