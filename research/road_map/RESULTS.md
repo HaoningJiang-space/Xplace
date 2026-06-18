@@ -782,3 +782,30 @@ SIGNOFF, net-weight by each of {pre-CTS-est, post-CTS-est, GR-routed, coupling-r
 post-CTS-est ≈ GR-routed ≈ union (route feedback unnecessary; the value is CTS-aware estimation); pre-CTS-est
 loses; coupling-routed may add a small top-10% edge. If post-CTS-est ties routed → the "route-aware" headline
 is replaced by "clock-aware (post-CTS) criticality net-weighting" + the divergence diagnostic.
+
+## R43 — ★★★ DECISIVE 4-SOURCE EXPERIMENT: the +15% is CLOCK-AWARE (post-CTS) criticality, NOT route feedback
+On the SAME reference placement (infl_fairest), same R33 actuation (cell-inflate, scale 1.0, topk 13000), all
+3 arms matched the SAME 146654/183496 nets at near-identical HPWL (2.778-2.788e7) — vary ONLY the criticality
+SOURCE → full DR+OpenRCX coupling signoff (all 0-DRC, no DRT_FAIL):
+| criticality source | DR+OpenRCX coupling TNS | gain vs pre-CTS fair-est |
+|---|---|---|
+| pre-CTS fair-est (R33 reference) | −972.5 | baseline |
+| **post-CTS-est (NO routing)** | **−830.6** | **+14.6%** |
+| GR-routed (geometry) | −818.5 | +15.8% |
+| coupling-routed (DR+OpenRCX) | −810.1 | +16.7% |
+**DECISIVE: post-CTS-est (−830.6) ≈ GR-routed (−818.5), within 1.5% (placement-noise level). A post-CTS
+ESTIMATE with ZERO routing recovers essentially the ENTIRE +15% gain.** The dominant lever is CLOCK-AWARE
+(post-CTS) criticality — the pre-CTS fair-est baseline was pathological (no clock tree, WNS −42). Routing
+GEOMETRY (GR) adds only ~1% over post-CTS-est (noise); COUPLING adds ~2.5% (the marginal mid-tier signal from
+R41, the only genuine routing-derived contribution, and it is small).
+
+**FINAL AUTOPSY VERDICT (R40–R43, codex-reviewed):** the +15.3% signoff TNS is REAL and survives force-matching,
+but it is a **clock-aware (post-CTS) criticality** effect, NOT route-feedback reordering of the critical set.
+"Route feedback is unnecessary" is now DIRECTLY shown — a routing-free post-CTS estimate ties the routed arm.
+The honest paper contribution is **"clock-aware (post-CTS-criticality) net-weighting beats the pre-CTS-estimate
+TDP baseline by +15% at signoff, with a marginal (+2%) coupling-aware refinement"** + the divergence DIAGNOSTIC
+(pass-1 est-vs-routed disagreement is dominated by the CTS stage, R40). The original "route-aware timing
+placement" headline is NOT supported on ariane. Next: (a) is the pre-CTS→post-CTS criticality gap a known/cheap
+fix (just estimate criticality AFTER a virtual-CTS / ideal-clock-latency model, no routing)? (b) does
+clock-aware criticality net-weighting beat Xplace --timing_opt (which IS post-CTS via live STA) — if not, the
+contribution shrinks further. (c) the divergence diagnostic as the standalone framework contribution.
