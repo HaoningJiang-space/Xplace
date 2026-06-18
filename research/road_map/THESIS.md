@@ -3,6 +3,16 @@
 The single entry point that ties the 27 road_map docs + R1–R37 into ONE framework. Read this first;
 each claim points to its evidence doc. (串起来: this is the system, not a result log.)
 
+> ⚠ **STATUS (2026-06-18, user mechanism-investigation — see MECHANISM_AUTOPSY.md): EARNED vs NOT EARNED.**
+> EARNED: union net-weighting → **+15% post-route coupling TNS on ariane at 0-DRC signoff** vs fair-est (R33)
+> AND vs force-matched `--timing_opt` (R36) — numbers VERIFIED from raw remote logs, not a collector artifact.
+> NOT EARNED (now hypotheses under autopsy): (1) the **mechanism** is "routed-timing reordering" — the actuator
+> is actually a per-pin geometric WIRELENGTH pull (`wirelength_timing_cuda_kernel.cu:46`), so the gain MAY be
+> a fanout/geometry effect (test: per-pin/fanout-normalized weighting). (2) the **"Jaccard<0.4 threshold law"**
+> — it mixes ests (gain uses fair metal5 → ariane Jaccard 0.517, ABOVE 0.4; the 0.231 uses metal3 default).
+> (3) the cross-design trigger — unfair fixed top-K, mixed est, est/routed not same-stage. **Do not write the
+> mechanism story or the law into the paper until the autopsy resolves them. §2/§4 below are tempered.**
+
 ---
 ## 0. One sentence (framing per CODEX_CHAIN_REVIEW.md — the DEFENSIBLE scope)
 **A deployable TWO-PASS route-feedback timing-placement flow for MACRO-CONGESTED designs, with an
