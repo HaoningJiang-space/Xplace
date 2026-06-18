@@ -167,6 +167,31 @@ ariane, est vs union, fanout_norm, matched force (force_frac 0.3, topfrac 0.10),
   decider: if union ≈ est ≈ shuffled across seeds → artifact CONFIRMED; if union ≪ est & ≪ shuffled → criticality
   survives after all. HPWL caveat: union is LOOSER (2.782 vs 2.624) yet times worse → not an area effect either.
 
+## ★★★ STATS GRID (GR, 5 seeds, frac topfrac0.10/force0.3, fanout_norm) — union BEATS the shuffled null
+| arm | mean droute_TNS | per-seed |
+|---|---|---|
+| union | **−3074.4** (best) | −2942.8 / −3020.9 / −3255.3 / −3069.4 / −3083.4 |
+| est | −3253.6 | −3394.9 / −3102.4 / −3138.3 / −3391.0 / −3241.5 |
+| shuffled (null) | −3452.4 (worst) | −3309.1 / (s1 failed) / −3680.9 / −3526.8 / −3292.6 |
+PAIRED same-seed deltas:
+- **union − shuffled = +364.6 mean, union better in 4/4 valid seeds (~+11%)** ← decisive null test.
+- union − est = +179.2 mean, union better in 4/5 seeds (~+5.5%).
+- ordering union > est > shuffled (monotonic in selection quality).
+**→ At GR, the ROUTED-CRITICAL SET genuinely beats a random same-cardinality/force/fanout net set in EVERY
+seed. This is the first evidence AGAINST A NULL (not a tuned point) that criticality is real, not pure
+geometry/force.** The frac-0.3 GR signal was NOT just est-noise.
+**HONEST CAVEATS (mechanism NOT yet declared survived):**
+1. **The signoff-fair single point CONTRADICTED** (union −1258.9 WORSE than est −1236.9). GR: union>est;
+   signoff: union<est. The claim is SIGNOFF → this disagreement is decisive and UNRESOLVED.
+2. n=5 (shuffled n=4, seed-1 shuffled run failed); est variance ~300 → union−est (+179) is within ~1σ; only
+   union−shuffled (+365, 4/4) is clean.
+3. shuffled null is random-DEGREE; codex wants DEGREE-STRATIFIED to fully exclude spatial/degree geometry.
+4. INFRA: root `/` disk full broke the in-script python summary (here-doc temp) AND seed-1 shuffled → set
+   TMPDIR=/data in all scripts; clear `/` ; re-run seed-1.
+**DECIDER:** est/union/shuffled × multi-seed at SIGNOFF (cell-inflate+DR+OpenRCX). union>shuffled at signoff
+across seeds ⇒ VCERF-positive (criticality real at the fidelity that matters). union≈shuffled at signoff ⇒
+the GR signal doesn't survive coupling ⇒ diagnostic-paper branch. THEN degree-stratified null + endpoint (P2).
+
 ## Reframed contribution (until the autopsy resolves the mechanism)
 "A 2-pass route-feedback net-weighting that reduces post-route TNS by ~15% on a macro-congested design at
 signoff" — an EMPIRICAL result whose MECHANISM and GENERALITY are under active autopsy. Do not write the
