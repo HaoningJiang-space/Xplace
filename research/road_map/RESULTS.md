@@ -703,3 +703,33 @@ CODEX_CHAIN_REVIEW.md's "post-hoc classifier" worry. Full analysis (with the sel
 Side finding (codex #5, verified, `norm_check.py`): the ariane union top-13k SET is normalization-sensitive
 — own-norm vs rank-percentile Jaccard 0.79, own-norm vs raw-ns 0.60 → **20–40% of the union set is a
 normalization artifact**. Evaluate `blend_crit_conf.py` under all three norms, or justify own-norm.
+
+## R40 — ★★★ MECHANISM AUTOPSY P3 (DECISIVE, 不失真): the ariane "divergence" is the CTS stage, NOT routing
+Same-stage criticality decomposition (`xplace_backend_ariane_samestage.tcl`, `div_frac.py`), three Jaccards:
+| comparison | top-5% | top-10% Jaccard | meaning |
+|---|---|---|---|
+| pre-CTS-est vs routed (the thesis "divergence") | 0.244 | **0.231** | looks highly divergent |
+| pre-CTS-est vs post-CTS-est (**CTS alone**) | 0.000 | 0.168 | CTS reorders the critical set almost entirely |
+| **post-CTS-est vs routed (ROUTING alone)** | **0.987** | **0.982** | **routing barely reorders it** |
+Timing sanity: pre-CTS WNS −42.1/TNS −206126 (pathological — `set_propagated_clock` on an unbuilt clock
+tree) vs post-CTS WNS −1.01/TNS −2196 (sane). **The R33 fair-est baseline (`ar_est_metal5`, via
+`est_layer_probe.tcl`) AND the divergence-metric est (`ar_base_place`) are BOTH dumped PRE-CTS** (no
+`clock_tree_synthesis` in those scripts) → the entire est-vs-routed comparison is pre-CTS-vs-(post-CTS+routed).
+
+**DECISIVE: at the SAME post-CTS stage, the GR-routed critical set is 98% identical to the pre-route estimate
+(Jaccard 0.982). The 0.231 "divergence" the thesis attributed to routing is the CTS clock-tree transition.**
+A post-CTS ESTIMATE (no routing) recovers 98% of the "routed" critical set. This is apples-to-apples: the
+arms' routed criticality (`ar_base_netslack`) is GR-fidelity (`estimate_parasitics -global_routing`), exactly
+the fidelity compared here; coupling was only in the signoff EVALUATION, not the criticality SOURCE.
+
+Combined with the concurrent P1 autopsy (commit 7af32ed: at matched force norm `--timing_force_frac 0.1`,
+union −3197 does NOT beat est −3168 at GR; broadcast≈fanout_norm → the R29 +10% was a FORCE-MAGNITUDE effect,
+not a criticality-SET effect) and R39 (the divergence metric is also est-timer-confounded):
+**→ the +15.3% signoff TNS is REAL as a number, but the core "route-feedback reorders the true critical set"
+MECHANISM is NOT supported on ariane. The routed criticality ≈ a post-CTS estimate (no routing needed), and
+the matched-force gain vanishes.** This is the METHOD_DERIVATION.md §8 diagnostic branch. Decisive remaining
+test: `ariane_signoff_fair.sh` (does ANY gain survive matched force + fanout_norm at DR+OpenRCX signoff).
+CAVEATS: P3 routing-only Jaccard is on the cell-inflated `infl_fairest` placement (routable; the pre-CTS/CTS
+rows are on density-1.0 `dms_base_s0` — different placement, but the 0.982 routing-only overlap is
+overwhelming and placement-robust). VCERF's "route feedback" premise needs a design where post-CTS-est vs
+routed Jaccard is genuinely LOW; ariane is NOT that design once measured same-stage.
