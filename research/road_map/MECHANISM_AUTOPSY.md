@@ -150,6 +150,23 @@ random-shuffle stats first (cheap first answer); if union beats random-shuffle, 
 null (replace each critical net with a random net in its degree decile — needs net-degree, compute in Xplace)
 before claiming criticality. If union does NOT beat even the random shuffle → done, it's geometry/force.
 
+## ★★★ SIGNOFF-FAIR (frac 0.3) — union does NOT beat est at signoff under fair controls
+ariane, est vs union, fanout_norm, matched force (force_frac 0.3, topfrac 0.10), `--use_cell_inflate`, DR+OpenRCX:
+| arm | HPWL | DR-coupling TNS | DR WNS |
+|---|---|---|---|
+| est | 2.624e7 | **−1236.9** | −0.624 |
+| union | 2.782e7 | **−1258.9 (WORSE 1.8%)** | −0.640 (worse) |
+- **CONTRADICTS the GR frac-0.3 +13.3%; CONVERGES with P1 frac-0.1** (union ≈ est). 2 of 3 fair-control tests
+  (P1 frac-0.1, signoff-fair frac-0.3) show union ≤ est; the GR sweep's union-wins (+2.5/+13.3/+2.4%) now look
+  like est-side single-seed NOISE (est was −3097..−3395 across fracs).
+- **Emerging honest conclusion (pending multi-seed):** the R33/R36 +15% (measured at raw scale 1.0, BROADCAST,
+  unmatched force) does NOT reproduce under fair controls (matched force + fanout-neutral) — it was a
+  force-MAGNITUDE / fanout effect, NOT a criticality-SET effect. This is the METHOD_DERIVATION §8 "diagnostic
+  paper" branch trending true.
+- **NOT yet final:** single-seed. The chained `ariane_stats.sh` (est/union/shuffled × 5 seeds, paired) is the
+  decider: if union ≈ est ≈ shuffled across seeds → artifact CONFIRMED; if union ≪ est & ≪ shuffled → criticality
+  survives after all. HPWL caveat: union is LOOSER (2.782 vs 2.624) yet times worse → not an area effect either.
+
 ## Reframed contribution (until the autopsy resolves the mechanism)
 "A 2-pass route-feedback net-weighting that reduces post-route TNS by ~15% on a macro-congested design at
 signoff" — an EMPIRICAL result whose MECHANISM and GENERALITY are under active autopsy. Do not write the
