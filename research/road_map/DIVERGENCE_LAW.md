@@ -16,10 +16,18 @@ criticality or top-K Jaccard of the critical set — **both computed from the tw
 ## 2. Evidence (two anchor designs, same NanGate45 flow, same 2-pass mechanism)
 | design | #macros | Spearman(est,routed crit) | top-K Jaccard | route-aware gain |
 |---|---|---|---|---|
-| **ariane133** (fixed-macro, congested) | **132+ SRAM** | **0.192** | **0.244** (top-13k) | **+15.3% signoff (R33)** |
+| **ariane133** (fixed-macro, congested) | **132+ SRAM** | **0.192** (HIGH div) | **0.244** (top-13k) | **+15.3% signoff (R33)** |
+| **bp_multi_top** (multi-core BP) | ~30 (6 ram types) | **0.776** (INTERMEDIATE div) | 0.878 (top-5k) | **measuring now (law's middle)** |
 | aes (std-cell, NanGate45) | 0 | 0.946 | 0.639 (top-3k) | ~0 expected (R18 ρ≈0); unmeasured |
 | bp_be_top | ~12 | 0.960 | 0.653 (top-5k) | ~0 predicted (Spearman high); unmeasured |
 | bp_fe_top (low-congestion) | few | 0.967 | 0.937 (top-13k) | ~0 signoff (R35: tied within 0.3%) |
+
+**★ bp_multi = the INTERMEDIATE-divergence design (codex Issue 3.1).** Spearman 0.776 sits cleanly between
+ariane (0.19) and the 0.95–0.97 cluster — an independent multi-core design at the law's middle. Its
+Spearman (0.78, intermediate) and Jaccard (0.88, near-low) DISAGREE → measuring its gain DISAMBIGUATES the
+metric: intermediate gain ⇒ Spearman is the gain-predictor + law calibrated; ~0 gain ⇒ Jaccard wins (gain
+needs near-total ranking disagreement). Either outcome sharpens the law. Macro count (~30) is between bp_be
+(12) and ariane (132), consistent with divergence ∝ macro-congestion.
 
 **★ KEY FINDING (4 designs): ariane is the LONE high-divergence OUTLIER; the regime is HEAVY MACRO-CONGESTION.**
 Three of four NanGate45 designs cluster at Spearman ~0.95–0.97 (est≈routed criticality ranking); only ariane
