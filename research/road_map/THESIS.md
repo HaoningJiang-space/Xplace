@@ -4,12 +4,14 @@ The single entry point that ties the 27 road_map docs + R1–R37 into ONE framew
 each claim points to its evidence doc. (串起来: this is the system, not a result log.)
 
 ---
-## 0. One sentence
-**In congestion-dominated (many-macro) placements, routing reorders WHICH nets are timing-critical so
-much that placement-stage estimated criticality is wrong; re-placing with a GENTLE net-weight on the
-UNION of estimated + first-pass-routed criticality closes post-route timing that a congestion-blind
-timing placer cannot — +15% post-route coupling TNS at signoff vs both academic and production baselines —
-and a measurable, oracle-free divergence trigger says exactly when this regime applies.**
+## 0. One sentence (framing per CODEX_CHAIN_REVIEW.md — the DEFENSIBLE scope)
+**A deployable TWO-PASS route-feedback timing-placement flow for MACRO-CONGESTED designs, with an
+ORACLE-FREE divergence TRIGGER and one signoff-validated high-divergence rescue case:** re-placing with a
+gentle net-weight on the UNION of estimated + first-pass-routed criticality closes post-route timing a
+congestion-blind placer cannot (+15% signoff coupling TNS on ariane vs both academic and production
+baselines), and a pass-1 critical-set-Jaccard trigger predicts WHEN to apply it (does-no-harm elsewhere).
+**The contribution is the TRIGGER + the rescue case, NOT a broad SOTA placer or a calibrated "law"**
+(those are not yet earned — see §4/§6). The load-bearing open test: a 2nd low-Jaccard design that GAINS.
 
 ---
 ## 1. The problem (first principles, FRAMEWORK.md §1)
@@ -43,9 +45,12 @@ place(base) → route(base) → extract per-net routed slack (pass-1 routing fee
   make-or-break" gate is thus downgraded to an efficiency-optimization (an in-loop GGR-STA bridge would
   make it cheaper, not possible).
 
-## 4. WHEN it applies — the DIVERGENCE THRESHOLD LAW (DIVERGENCE_LAW.md, the predictive core)
-**Gain ∝ (1 − top-K critical-SET Jaccard(est, routed)), with a THRESHOLD at Jaccard ≈ 0.4.** Measured at a
-consistent top-10% fraction across 5 designs:
+## 4. WHEN it applies — the DIVERGENCE TRIGGER (a HYPOTHESIS, not yet a law — codex)
+**Hypothesis: gain ∝ (1 − top-K critical-SET Jaccard(est, routed)), with a threshold near Jaccard ≈ 0.4.**
+HONEST STATUS (codex): this is ONE positive outlier (ariane) + 4 "no-gain when est≈routed" points — it
+predicts when the placement PERTURBS, but a 2nd low-Jaccard design that GAINS is required to prove the
+perturbation is BENEFICIAL not merely different (the soft circularity). Until then it is a trigger
+hypothesis, not a calibrated law. Measured at a consistent top-10% fraction across 5 designs:
 
 | design | #macros | top-10% Jaccard | route-aware gain |
 |---|---|---|---|
