@@ -108,6 +108,25 @@ est vs union, fanout_norm, MATCHED force norm (`--timing_force_frac`), constant 
   frac ≥ 0.2, modestly (+2.5%) to +13%." Needs (a) SIGNOFF confirmation (cell-inflate+DR+OpenRCX at frac 0.3),
   (b) multi-seed to kill the est-noise. Run signoff-fair at frac 0.3 next.
 
+## ★★ METHODOLOGY CORRECTION (user, 2026-06-18): the frac sweep is PARAMETER-TUNING, not a result
+The "+13.3% at frac 0.3" is **HARKing**: I tried frac {0.1,0.2,0.3,0.5} and quoted the frac where *est*
+happened to be WORST (−3395 vs −3097..−3168 elsewhere). Single-seed point comparisons cannot separate signal
+from seed noise, and picking the favorable hyperparameter post-hoc is not evidence. **There has been NO
+statistics.** The frac sweep is HYPOTHESIS-GENERATING only.
+**The rigorous test (now running, `ariane_stats.sh`):** FIXED frac 0.3, fanout_norm, matched force, 3 arms ×
+5 seeds:
+- **est, union, and SHUFFLED-criticality** (`shuffle_crit.py`: permute criticality values across net names,
+  seeded → a RANDOM net set of the SAME cardinality/force/frac/fanout — everything identical to union EXCEPT
+  which nets).
+- Report per-arm mean ± std + the PAIRED (same-seed) union−est and **union−shuffled** differences.
+- **The decisive comparison is union vs SHUFFLED** (holds frac/force/cardinality/fanout fixed → the frac
+  choice becomes IRRELEVANT): union ≪ shuffled ⇒ the ROUTED-CRITICAL nets specifically matter (criticality is
+  real); union ≈ shuffled ⇒ any net set at that force helps ⇒ geometry/force, not criticality, and the whole
+  union story is an artifact. This is the test that answers the user's "感觉是调参数，有没有概率" — it makes the
+  conclusion a statistical claim against a null, not a tuned point.
+**Until ariane_stats.sh returns, the "mechanism survives" claim is NOT established** — only "hypothesis from a
+noisy sweep." (signoff-fair frac-0.3 single point is also single-seed → corroborating at best, not decisive.)
+
 ## Reframed contribution (until the autopsy resolves the mechanism)
 "A 2-pass route-feedback net-weighting that reduces post-route TNS by ~15% on a macro-congested design at
 signoff" — an EMPIRICAL result whose MECHANISM and GENERALITY are under active autopsy. Do not write the
