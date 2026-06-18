@@ -754,3 +754,31 @@ angle survives: COUPLING-aware routed criticality (not GR, not used by the curre
 the top-10% set — a coupling-criticality source is the only place route-feedback could add real timing info on
 ariane, and even there it is modest and mid-tier.** Pending the concurrent `ariane_signoff_fair.sh` (does any
 gain survive matched force + fanout_norm at signoff) for the final gain verdict.
+
+## R42 — autopsy conclusion, CODEX-REVIEWED + frac-sweep CORRECTION (verdict: sound but was slightly over-claimed)
+codex (gpt-5.5 xhigh) reviewed the R40/R41 conclusion: **"sound but slightly over-claimed; directionally right
+— the +15.3% is real, but current evidence does NOT support 'GR routing reorders the true critical set' as the
+mechanism."** Corrections applied:
+- **(D, the main fix) "matched-force gain vanishes" was OVER-READ — and the concurrent frac-sweep REFUTES it.**
+  P1 (frac=0.1: union −3197 ≈ est −3168) was a single outlier config. The frac sweep (GR) shows union BEATS est
+  at matched force for frac 0.2/0.3/0.5: est −3167/−3395/−3097 vs union −3088/−2943/−3024 = **+2.5% / +13.3% /
+  +2.4%**. So a criticality-SET effect DOES survive force-matching; the gain is NOT purely force-magnitude.
+- **Reconciliation with R40 (GR-routed ≈ post-CTS-est, 0.982):** union beats est at matched force because the
+  est baseline is PRE-CTS (pathological, WNS −42) while union's routed component carries the POST-CTS critical
+  set (GR-routed ≈ post-CTS-est). **The surviving advantage is POST-CTS / clock-aware criticality, NOT
+  routing-reordering.** Routing adds ~nothing over a post-CTS estimate (0.982); the routed CSV is merely the
+  only channel by which the current pipeline injects post-CTS criticality (the est baseline being pre-CTS).
+- **(A/B) placement-mismatch caveat:** the 0.982 routing-only row is on infl_fairest; the pre/post-CTS rows on
+  dms_base_s0 — so the decomposition is conditional; the full 0.231 cannot be perfectly attributed to CTS on one
+  identical placement. (E) coupling "narrow" is correct (top-5% 0.971 barely moves; top-10% 0.767 = ~23% mid-tier).
+- **(D, remaining gap) signoff matched-force still pending** (concurrent `ariane_signoff_fair.sh` running): the
+  matched-force evidence is GR-fidelity; the signoff matched-force number is not yet in.
+
+**CORRECTED autopsy verdict:** the +15.3% is REAL and survives force-matching (criticality-SET effect, not pure
+magnitude), BUT the effective source is **post-CTS clock-aware criticality**, not route-feedback reordering —
+GR-routed criticality is 98% a post-CTS estimate, and the est baseline only looked weak because it was dumped
+PRE-CTS (pathological). **THE decisive missing experiment (codex F):** on ONE placement, same force-norm, at
+SIGNOFF, net-weight by each of {pre-CTS-est, post-CTS-est, GR-routed, coupling-routed} criticality. Prediction:
+post-CTS-est ≈ GR-routed ≈ union (route feedback unnecessary; the value is CTS-aware estimation); pre-CTS-est
+loses; coupling-routed may add a small top-10% edge. If post-CTS-est ties routed → the "route-aware" headline
+is replaced by "clock-aware (post-CTS) criticality net-weighting" + the divergence diagnostic.
