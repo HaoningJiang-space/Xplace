@@ -14,10 +14,11 @@ Formally, gain ≈ f(1 − agreement(est_crit, routed_crit)), agreement measured
 criticality or top-K Jaccard of the critical set — **both computed from the two pass-1 CSVs, no oracle.**
 
 ## 2. Evidence (two anchor designs, same NanGate45 flow, same 2-pass mechanism)
-| design | Spearman(est,routed crit) | top-13k Jaccard | routed-only critical nets | route-aware gain |
+| design | Spearman(est,routed crit) | top-K Jaccard | routed-only critical nets | route-aware gain |
 |---|---|---|---|---|
-| **ariane133** (fixed-macro, congested) | **0.192** | **0.244** | 7898 / 13000 | **+15.3% signoff (R33)** |
-| **bp_fe_top** (low-congestion) | **0.967** | **0.937** | 424 / 13000 | ~0 (GR: union −96267 vs fairest −93567; routed −100270) |
+| **ariane133** (fixed-macro, congested) | **0.192** | **0.244** (top-13k) | 7898 / 13000 | **+15.3% signoff (R33)** |
+| **aes** (std-cell, NanGate45) | **0.946** | **0.639** (top-3k) | 660 / 3000 | ~0 expected (R18 detour↔slack ρ≈0); UNMEASURED |
+| **bp_fe_top** (low-congestion) | **0.967** | **0.937** (top-13k) | 424 / 13000 | ~0 signoff (R35: all 3 arms tied within 0.3%) |
 
 - ariane: est and routed criticality rankings **barely agree** (Spearman 0.19) — routing reorders which
   nets are critical (layer assignment + detour, R28/R29). 61% of the routed-critical top-13k is invisible
@@ -50,6 +51,16 @@ criticality or top-K Jaccard of the critical set — **both computed from the tw
   divergence), which is a stronger DAC claim. Hunt one (a moderately-congested NanGate45 design).
 - **Per-net not just aggregate.** Divergence is global here; a per-net or per-region divergence map could
   target route-awareness only where est is locally wrong — finer-grained (GOAL #5).
+- **★ WHICH agreement metric? Spearman vs Jaccard DISAGREE on aes (GOAL #5/#8).** aes: Spearman 0.946
+  (HIGH, like bp_fe) but top-3k Jaccard 0.639 (INTERMEDIATE). R18 says aes has ~0 timing headroom
+  (detour↔slack ρ≈0) → Spearman (high→predicts ~0) is the BETTER gain-predictor here; global top-K
+  Jaccard over-counts divergence on non-critical nets. **Hypothesis: the gain-predictive divergence is
+  rank-correlation OR divergence RESTRICTED TO CRITICAL-PATH nets, not global set-overlap.** A net can be
+  routed-vs-est divergent yet off the critical path → contributes to Jaccard but not to TNS gain. This
+  refines the law: gain ∝ (1 − agreement_on_timing-bottleneck-nets). **TEST: measure aes route-aware gain
+  (cheap — std-cell, 0-DRC routes); if ~0 despite Jaccard 0.64, it confirms Spearman/critical-restricted
+  divergence is the right trigger and falsifies naive global-Jaccard.** aes CSVs exist
+  (`backend_aes/aes_{est,base}_netslack.csv`).
 
 ## 5. Status
 - Divergence numbers: FINAL (from pass-1 CSVs, design-independent of pending DR).
