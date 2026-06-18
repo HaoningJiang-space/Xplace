@@ -54,6 +54,20 @@ at 0-DRC signoff" is earned.
 - **Process fix:** backport the bp_fe driver's strict DRC=0 + no-DRT_FAIL gates to the ariane collector; never
   cite `ariane_inflate_fidelity_results.txt` (stale DR==GR bug).
 
+## codex harness audit (independent, same session) — CONFIRMS the user + 2 additions
+codex's adversarial audit of divergence.py/div_frac.py/dump_netslack/the arm scripts ranked 3 risks:
+1. **Mixed K / fraction / universe invalidates the law calibration** (= user #2/#3). Fix: constant fraction
+   (--oracle_topfrac now implemented), single est.
+2. **dump_netslack compares different circuit STAGES / key sets** (= user #4: est pre-CTS, routed post-CTS).
+3. **Oracle arms can be silently weakened by EXACT net-name matching** (no canonicalization; net_names from DEF
+   vs OpenROAD get_full_name). + **Spearman tie bug:** divergence.py's Spearman does NOT average ties and
+   includes the huge zero-criticality tie mass → **Spearman is untrustworthy** (so bp_multi's "Spearman 0.776
+   disambiguation" is suspect; the Jaccard-based law is unaffected, but demote/scipy-fix Spearman).
+**Net-match VERIFIED (codex risk 3 does NOT invalidate the +15%):** ariane est and union arms BOTH match the
+SAME **146654/183496 nets** (~80%, identical count across arms) → the est-vs-union comparison weights the same
+matchable universe, so the +15% RELATIVE gain is internally fair. Caveat: ~20% of nets (likely escaped-name /
+special) get ZERO weight in ALL arms — an absolute-completeness gap, not a relative-comparison bias.
+
 ## Reframed contribution (until the autopsy resolves the mechanism)
 "A 2-pass route-feedback net-weighting that reduces post-route TNS by ~15% on a macro-congested design at
 signoff" — an EMPIRICAL result whose MECHANISM and GENERALITY are under active autopsy. Do not write the
