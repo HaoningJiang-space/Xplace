@@ -14,11 +14,24 @@ Formally, gain ≈ f(1 − agreement(est_crit, routed_crit)), agreement measured
 criticality or top-K Jaccard of the critical set — **both computed from the two pass-1 CSVs, no oracle.**
 
 ## 2. Evidence (two anchor designs, same NanGate45 flow, same 2-pass mechanism)
-| design | Spearman(est,routed crit) | top-K Jaccard | routed-only critical nets | route-aware gain |
+| design | #macros | Spearman(est,routed crit) | top-K Jaccard | route-aware gain |
 |---|---|---|---|---|
-| **ariane133** (fixed-macro, congested) | **0.192** | **0.244** (top-13k) | 7898 / 13000 | **+15.3% signoff (R33)** |
-| **aes** (std-cell, NanGate45) | **0.946** | **0.639** (top-3k) | 660 / 3000 | ~0 expected (R18 detour↔slack ρ≈0); UNMEASURED |
-| **bp_fe_top** (low-congestion) | **0.967** | **0.937** (top-13k) | 424 / 13000 | ~0 signoff (R35: all 3 arms tied within 0.3%) |
+| **ariane133** (fixed-macro, congested) | **132+ SRAM** | **0.192** | **0.244** (top-13k) | **+15.3% signoff (R33)** |
+| aes (std-cell, NanGate45) | 0 | 0.946 | 0.639 (top-3k) | ~0 expected (R18 ρ≈0); unmeasured |
+| bp_be_top | ~12 | 0.960 | 0.653 (top-5k) | ~0 predicted (Spearman high); unmeasured |
+| bp_fe_top (low-congestion) | few | 0.967 | 0.937 (top-13k) | ~0 signoff (R35: tied within 0.3%) |
+
+**★ KEY FINDING (4 designs): ariane is the LONE high-divergence OUTLIER; the regime is HEAVY MACRO-CONGESTION.**
+Three of four NanGate45 designs cluster at Spearman ~0.95–0.97 (est≈routed criticality ranking); only ariane
+(132+ SRAM macros) is low-Spearman 0.19. The discriminator is **macro count / congestion**: ariane's 132 fixed
+SRAM blockages force long global nets through detours + layer reassignment that reorder criticality (R28/R29
+"real half"); bp_be (~12 macros), bp_fe (few), aes (0) have short-enough nets that placement-stage est already
+nails the critical ranking. **Implication for thesis scope (honest):** the method's value is CONCENTRATED in
+congestion-dominated, many-macro designs; for the common low-congestion case the divergence trigger correctly
+says "est suffices, skip route-awareness". This is a coherent SCOPED contribution — but it makes a **2nd
+heavily-macro-congested design** the load-bearing experiment (codex Issue 3): without it, +15% is ariane-specific.
+Candidates by macro count: ariane136 (136 macros, sibling — easy but not independent), mempool_group / bp_multi /
+bp_quad (many macros, independent — heavier). bp_be (12 macros) was NOT enough to enter the high-divergence regime.
 
 - ariane: est and routed criticality rankings **barely agree** (Spearman 0.19) — routing reorders which
   nets are critical (layer assignment + detour, R28/R29). 61% of the routed-critical top-13k is invisible
