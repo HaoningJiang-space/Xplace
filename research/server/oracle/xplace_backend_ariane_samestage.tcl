@@ -1,14 +1,10 @@
-# MECHANISM AUTOPSY step 1 (user-directed): isolate the CTS/stage contribution to the est-vs-routed
-# criticality divergence. On ONE fixed ariane placement, dump per-net worst-slack criticality at THREE
-# points — (a) est PRE-CTS (estimate_parasitics -placement, the current "est" stage), (b) est POST-CTS+DP
-# (same -placement estimate but after clock tree + detailed placement = the routed CSV's netlist stage),
-# (c) routed (after global_route). Then Jaccard(pre,routed) vs Jaccard(post,routed) tells us how much of
-# the "divergence" is CTS/stage vs genuine routing reordering. GR-fidelity (matches the divergence metric).
-# Default setRC (metal3) = the est the divergence table uses. CPU-only, no DR. No set -u. No () in echo.
+# P3 SAME-STAGE divergence (MECHANISM_AUTOPSY #4): dump est slack AFTER CTS+DP (pre-route) and routed
+# slack AFTER global_route, on the SAME post-CTS/post-DP netlist. Isolates ROUTING-parasitic reordering
+# from the CTS/netlist/stage differences the current backend conflates (est was dumped pre-CTS).
 set NG /data/ziheng/wzh/orfs/OpenROAD-flow-scripts/flow/platforms/nangate45
 set DES /data/ziheng/wzh/orfs/OpenROAD-flow-scripts/flow/designs/nangate45/ariane133
-set OUT $::env(XP_OUT); file mkdir $OUT
-set TAG $::env(XP_TAG)
+set OUT $::env(XP_OUT)
+file mkdir $OUT
 set_thread_count 16
 read_lef $NG/lef/NangateOpenCellLibrary.tech.lef
 read_lef $NG/lef/NangateOpenCellLibrary.macro.mod.lef
@@ -28,27 +24,24 @@ proc dump_netslack {fn} {
     if {$wslk < 1e29} { puts $f "$nm,$wslk" } }
   close $f
 }
-# (a) est PRE-CTS — the current "est" stage (placement-stage estimate, no clock tree yet)
-estimate_parasitics -placement
-puts "PRECTS_WNS [sta::worst_slack -max]"
-puts "PRECTS_TNS [sta::total_negative_slack -max]"
-dump_netslack $OUT/${TAG}_est_prects.csv
-# build the clock tree + re-legalize (this is the netlist stage the routed CSV is dumped at)
+# --- bring the netlist to post-CTS/post-DP FIRST (so est and routed share the same stage) ---
 clock_tree_synthesis -buf_list BUF_X4 -root_buf BUF_X4 -sink_clustering_enable
 set_propagated_clock [all_clocks]
 detailed_placement
 catch { check_placement }
-# (b) est POST-CTS+DP — same -placement estimator, but on the post-CTS netlist/geometry (no routing yet)
+# --- SAME-STAGE est: Steiner estimate on the post-CTS/post-DP netlist, BEFORE routing ---
 estimate_parasitics -placement
-puts "POSTCTS_WNS [sta::worst_slack -max]"
-puts "POSTCTS_TNS [sta::total_negative_slack -max]"
-dump_netslack $OUT/${TAG}_est_postcts.csv
-# (c) routed — global route + GR-estimated parasitics (the "routed" criticality stage, GR fidelity)
+puts "SAMESTAGE_EST_WNS [sta::worst_slack -max]"
+puts "SAMESTAGE_EST_TNS [sta::total_negative_slack -max]"
+dump_netslack $OUT/$::env(XP_TAG)_samestage_est_netslack.csv
+# --- routed: same netlist, now with global route ---
+# (R32 convergence fix: layer adjustment + congestion iters so GR clears overflow on the routability-grade
+#  cell-inflated placement; plain global_route over-packs and stalls "GRT-0103 hard benchmark" otherwise)
 set_routing_layers -signal metal2-metal10 -clock metal2-metal10
 set_global_routing_layer_adjustment metal2-metal10 0.5
 global_route -congestion_iterations 30 -verbose
 estimate_parasitics -global_routing
-puts "ROUTED_WNS [sta::worst_slack -max]"
-puts "ROUTED_TNS [sta::total_negative_slack -max]"
-dump_netslack $OUT/${TAG}_routed.csv
-puts "BACKEND_SAMESTAGE_DONE"
+puts "SAMESTAGE_ROUTED_WNS [sta::worst_slack -max]"
+puts "SAMESTAGE_ROUTED_TNS [sta::total_negative_slack -max]"
+dump_netslack $OUT/$::env(XP_TAG)_samestage_routed_netslack.csv
+puts "SAMESTAGE_BACKEND_DONE"

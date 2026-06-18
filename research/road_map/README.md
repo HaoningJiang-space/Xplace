@@ -25,7 +25,7 @@ Current one-line state:
 The next experiments should resolve these in order:
 
 1. Does the ariane gain survive `--oracle_topfrac`, `--timing_force_frac`, and
-   `--oracle_pin_weight_mode=fanout_norm`?
+   `--oracle_pin_weight_mode=fanout_norm`? Script: `research/server/oracle/ariane_autopsy_p1.sh`.
 2. Does endpoint or critical-sink-only weighting preserve the gain with less fanout/geometry bias?
 3. Does same-stage estimated-vs-routed divergence remain large after removing CTS/stage confounds?
 4. Does a finite-difference step along the route-feedback force improve real DR+OpenRCX TNS?

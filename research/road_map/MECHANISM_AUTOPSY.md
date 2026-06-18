@@ -68,6 +68,29 @@ SAME **146654/183496 nets** (~80%, identical count across arms) → the est-vs-u
 matchable universe, so the +15% RELATIVE gain is internally fair. Caveat: ~20% of nets (likely escaped-name /
 special) get ZERO weight in ALL arms — an absolute-completeness gap, not a relative-comparison bias.
 
+## ★★★ P1 RESULT (GR fidelity) — CONCERNING: the union-over-est gain does NOT survive matched force norm
+ariane, est(metal5) vs union, broadcast vs fanout_norm, at `--oracle_topfrac 0.10 --timing_force_frac 0.1`
+(constant fraction + MATCHED force norm). droute_TNS (GR):
+| arm | mode | HPWL | droute_TNS |
+|---|---|---|---|
+| est | broadcast | 2.344e7 | −3168.3 |
+| union | broadcast | 2.342e7 | **−3196.8 (WORSE than est)** |
+| est | fanout_norm | 2.347e7 | −3160.5 |
+| union | fanout_norm | 2.344e7 | **−3196.1 (WORSE than est)** |
+- Contrast R29 (raw scale 1.0, NO force_frac): est −2735, union −2454 (+10%). **The +10% GR gain DISAPPEARS
+  (slightly reverses) once the timing force NORM is matched.** broadcast≈fanout_norm → not even a fanout
+  effect at this force; it's a FORCE-MAGNITUDE effect: at scale 1.0 union pulls harder (more/higher-fanout
+  weighted nets) → more timing improvement; equalize the force and the criticality SET stops mattering.
+- **This is the autopsy's central risk realized at GR:** the union-over-est advantage was tied to force
+  magnitude, not to a better criticality set. frac 0.1 may also just be TOO WEAK (both arms barely perturb:
+  HPWL 2.34e7 ≈ no-timing baseline, TNS worse than R29's stronger-force −2735) → a force SWEEP is needed to
+  see if ANY matched-force level shows union>est.
+- **DECISIVE next (the +15% is a SIGNOFF claim, this is GR):** (a) GR force-frac SWEEP {0.1,0.2,0.3,0.5}
+  est-vs-union fanout_norm — does union beat est at ANY matched force? (b) the SIGNOFF (cell-inflate+DR+
+  OpenRCX) R33 comparison RE-RUN with force_frac+fanout_norm — does the +15% survive fair controls at
+  signoff? If neither shows union>est at matched force → the +15% is a magnitude/fanout artifact (the
+  "diagnostic paper" branch, METHOD_DERIVATION §8).
+
 ## Reframed contribution (until the autopsy resolves the mechanism)
 "A 2-pass route-feedback net-weighting that reduces post-route TNS by ~15% on a macro-congested design at
 signoff" — an EMPIRICAL result whose MECHANISM and GENERALITY are under active autopsy. Do not write the

@@ -1,28 +1,24 @@
 #!/bin/bash
-# MECHANISM AUTOPSY step 1 driver (user-directed): run the same-stage backend on a base ariane placement,
-# then compute top-5%/10% Jaccard for (pre-CTS est vs routed), (post-CTS est vs routed), (pre vs post-CTS).
-# Decomposes the est-vs-routed "divergence" into CTS-stage vs genuine-routing contributions. CPU-only,
-# no GPU (won't collide with the concurrent bp_quad). No set -u. flock single-instance guard.
+# MECHANISM AUTOPSY P3 (clean, user-refined backend): on a CELL-INFLATED (routability-grade) ariane
+# placement, dump SAME-STAGE est (post-CTS/post-DP, pre-route) and routed (post-CTS, post-GR), then compute
+# top-5%/10% Jaccard(est_postCTS, routed) = the ROUTING-ONLY reordering of the post-CTS critical set.
+# Cell-inflated so GR converges (density-1.0 stalls at "GRT-0103 hard benchmark", R31). CPU-only. flock guard.
 source ~/miniconda3/etc/profile.d/conda.sh
 exec 200>/tmp/ariane_samestage.lock; flock -n 200 || { echo "ALREADY_RUNNING"; exit 9; }
 B=/data/ziheng/wzh/bridge
 OR=/data/ziheng/wzh/conda_envs/orfs/bin/openroad
 XPD=/data/ziheng/wzh/xplace_dac/Xplace
-# a base (no-timing) ariane placement DEF (density-1.0; GR completes for the criticality dump even if dense)
-DEF=$(ls -t $XPD/result/*/output/dms_base_s0_ariane_dp.def 2>/dev/null | head -1)
-[ -n "$DEF" ] || { echo "FATAL no base DEF"; exit 3; }
-OUTD=$B/ariane_samestage; mkdir -p $OUTD
-echo "SAMESTAGE_START DEF=$DEF $(date +%H:%M:%S)"
+# a cell-inflated (routability-grade, 0-DRC capable) ariane placement from R33
+DEF=$(ls -t $XPD/result/*/output/infl_fairest_ariane_dp.def 2>/dev/null | head -1)
+[ -n "$DEF" ] || { echo "FATAL no infl_fairest DEF"; exit 3; }
+OUTD=$B/ariane_samestage2; mkdir -p $OUTD
+echo "SAMESTAGE2_START DEF=$DEF $(date +%H:%M:%S)"
 conda activate /data/ziheng/wzh/conda_envs/orfs
-export XP_DEF=$DEF XP_OUT=$OUTD XP_TAG=ss; cd $B
-$OR -no_init -exit xplace_backend_ariane_samestage.tcl > $B/backend_samestage.log 2>&1
-echo "BACKEND rc=$? done=$(grep -c BACKEND_SAMESTAGE_DONE $B/backend_samestage.log) $(date +%H:%M:%S)"
-grep -E "PRECTS_|POSTCTS_|ROUTED_" $B/backend_samestage.log
-# --- Jaccard decomposition (div_frac.py: top-5%/10% set overlap) ---
-echo "=== Jaccard(est_PRE-CTS, routed) [the current divergence metric] ==="
-python3 $B/div_frac.py $OUTD/ss_est_prects.csv $OUTD/ss_routed.csv
-echo "=== Jaccard(est_POST-CTS, routed) [routing-only reordering] ==="
-python3 $B/div_frac.py $OUTD/ss_est_postcts.csv $OUTD/ss_routed.csv
-echo "=== Jaccard(est_PRE-CTS, est_POST-CTS) [CTS-alone reordering] ==="
-python3 $B/div_frac.py $OUTD/ss_est_prects.csv $OUTD/ss_est_postcts.csv
-echo "ARIANE_SAMESTAGE_AUTOPSY_DONE"
+export XP_DEF=$DEF XP_OUT=$OUTD XP_TAG=ss2; cd $B
+$OR -no_init -exit xplace_backend_ariane_samestage.tcl > $B/backend_samestage2.log 2>&1
+echo "BACKEND rc=$? done=$(grep -c SAMESTAGE_BACKEND_DONE $B/backend_samestage2.log) $(date +%H:%M:%S)"
+grep -E "SAMESTAGE_EST_|SAMESTAGE_ROUTED_" $B/backend_samestage2.log
+echo "=== P3 DECISIVE: Jaccard(est_postCTS, routed) = ROUTING-ONLY reordering ==="
+echo "   (contrast: pre-CTS-est vs routed = 0.231 total; pre-CTS vs post-CTS = 0.000/0.168 CTS-alone)"
+python3 $B/div_frac.py $OUTD/ss2_samestage_est_netslack.csv $OUTD/ss2_samestage_routed_netslack.csv
+echo "ARIANE_SAMESTAGE2_DONE"
