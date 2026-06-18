@@ -10,14 +10,17 @@ the divergence axis.
 > routed criticality**. When est and routed criticality coincide, routing feedback carries no new
 > information and the gain → 0 (it can even slightly hurt, by admitting routed-side noise).
 
-Formally, gain ≈ f(1 − agreement(est_crit, routed_crit)), agreement measured by Spearman of per-net
-criticality or top-K Jaccard of the critical set — **both computed from the two pass-1 CSVs, no oracle.**
+Formally, gain ≈ f(1 − agreement(est_crit, routed_crit)). **The gain-predictive agreement metric is top-K
+critical-SET JACCARD, NOT full-ranking Spearman** (settled by bp_multi, R37: Spearman 0.776 intermediate but
+Jaccard 0.878 high → gain ~0, matching Jaccard). Both are computed from the two pass-1 CSVs (no oracle), but
+only set-overlap predicts gain — because net-weighting acts on the top-K critical SET, so identical critical
+sets (high Jaccard) give identical placements regardless of within-set rank order (Spearman).
 
 ## 2. Evidence (two anchor designs, same NanGate45 flow, same 2-pass mechanism)
 | design | #macros | Spearman(est,routed crit) | top-K Jaccard | route-aware gain |
 |---|---|---|---|---|
 | **ariane133** (fixed-macro, congested) | **132+ SRAM** | **0.192** (HIGH div) | **0.244** (top-13k) | **+15.3% signoff (R33)** |
-| **bp_multi_top** (multi-core BP) | ~30 (6 ram types) | **0.776** (INTERMEDIATE div) | 0.878 (top-5k) | **measuring now (law's middle)** |
+| **bp_multi_top** (multi-core BP) | ~30 (6 ram types) | **0.776** (INTERMEDIATE Spearman) | 0.878 (top-5k) | **~0 (GR, R37) → matches JACCARD not Spearman** |
 | aes (std-cell, NanGate45) | 0 | 0.946 | 0.639 (top-3k) | ~0 expected (R18 ρ≈0); unmeasured |
 | bp_be_top | ~12 | 0.960 | 0.653 (top-5k) | ~0 predicted (Spearman high); unmeasured |
 | bp_fe_top (low-congestion) | few | 0.967 | 0.937 (top-13k) | ~0 signoff (R35: tied within 0.3%) |

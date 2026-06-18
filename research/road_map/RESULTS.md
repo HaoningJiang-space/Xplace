@@ -608,3 +608,32 @@ violations** (detailed_route opt iterations 105357→…→0). Clean head-to-hea
   convergence. **The ONE un-criticized clean result remains R33 (+15.3%, source within flat net-weight,
   iso-mechanism iso-HPWL).** Roadmap reordered: bp_be_top (running) → GPUTimer injection (Option 2) →
   Pareto sweep → cross-base convergence.
+
+## R37 — ★★ MULTI-DESIGN SWEEP (3 new designs via fresh ORFS) → the law's METRIC is critical-SET Jaccard, gain regime is NARROW
+Built fresh ORFS floorplans (synth via symlinked conda yosys/openroad) + Xplace bridges for 3 independent
+designs; measured est-vs-routed criticality divergence (2-pass base) and, for bp_multi, the gain:
+| design | #macros | Spearman | top-K Jaccard | route-aware gain |
+|---|---|---|---|---|
+| ariane133 | 132 | 0.192 | 0.244 (13k) | **+15.3% signoff (R33/R36)** |
+| **bp_multi_top** | ~30 | **0.776** (intermed) | **0.878** (5k) | **~0 (GR: union −275052 vs fairest −276274, +0.4%; routed −320436 WORSE)** |
+| bp_be_top | ~12 | 0.960 | 0.653 (5k) | unmeasured |
+| bp_fe_top | few | 0.967 | 0.937 (13k) | ~0 signoff (R35) |
+| aes | 0 | 0.946 | 0.639 (3k) | unmeasured (R18 ρ≈0) |
+**★ KEY (bp_multi disambiguates the law's metric): gain-predictor is top-K critical-SET JACCARD, NOT
+full-ranking Spearman.** bp_multi has INTERMEDIATE Spearman (0.776) but HIGH Jaccard (0.878), and its gain
+is ~0 — matching Jaccard (high→~0), refuting Spearman (intermediate→would predict gain). Mechanistically
+sound: net-weighting acts on the top-K critical SET; if est & routed pick the SAME critical nets (high
+Jaccard), identical weighting → identical placement → no gain, regardless of within-set rank order. Only
+when routed picks DIFFERENT critical nets (low Jaccard, ariane 0.244) is there a gain.
+- **Honest consequence — the gain REGIME IS NARROW:** among 5 designs only ariane (Jaccard 0.244) is in the
+  gain regime; bp_multi/bp_fe (Jaccard 0.88/0.94) are ~0. The discriminator is HEAVY MACRO-CONGESTION
+  (ariane 132 macros forces long nets through detour+layer-reassignment that change WHICH nets are critical).
+  The method's value is SCOPED to congestion-dominated designs — and the Jaccard trigger (computable
+  oracle-free at pass-1) correctly says "skip route-awareness" on the others.
+- **GR-fidelity caveat:** bp_multi gain is GR-stage; on bp_fe the GR routed-harm washed out at signoff (R35)
+  but union stayed ~flat → bp_multi union ~0 is likely robust. Signoff confirmation optional (low value:
+  union flat at GR).
+- **For STRONG SOTA (#12):** still need a 2nd LOW-Jaccard (heavy-macro) design with a POSITIVE gain to prove
+  +15% isn't ariane-unique. Tractable many-macro candidates exhausted at NanGate45 except mempool_group
+  (4400×4400, heavy) — or accept the scope as "congestion-dominated regime" with ariane as the exemplar +
+  the law explaining the negatives. Drivers: `bpmulti_{floorplan,base,arms}.sh`, `bpbe_*`.
