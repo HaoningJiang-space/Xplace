@@ -670,3 +670,25 @@ moves to MECHANISM VERIFICATION on the existing ariane positive: P1 recompute ar
 and post-CTS same-stage (#3/#4, recompute-only, cheapest); P2 per-critical-load-pin vs per-net-min at matched
 force (#2); P3 finite-difference along the timing gradient + reroute (#1, decisive). FIXED #11 (committed
 `blend_crit.py`); #9/#10 gates added to the bp_fe driver (backport to ariane collector pending).
+
+## R39 — ★★ THE DIVERGENCE-LAW THRESHOLD IS EST-TIMER DEPENDENT (depth-first on codex #3/#8, 不失真)
+Recomputed ariane est-vs-routed top-K Jaccard with BOTH est timers vs the SAME routed CSV (`div_frac.py`):
+| est timer | top-5% | top-10% Jaccard |
+|---|---|---|
+| metal3 / default placement-est (`ar_base_place`) | 0.244 | **0.231** ← what DIVERGENCE_LAW.md quotes |
+| **fair metal5 est** (= the R33 +15.3% gain baseline) | 0.331 | **0.517** |
+**The law's "ariane uniquely below the 0.4 threshold" uses the metal3/default est; the +15.3% gain uses the
+fair metal5 est (adopted in R28/R29 because metal3 is ~39× over-pessimistic). Recomputed consistently with
+the fair est, ariane is 0.517 — ABOVE 0.4, in the band of the "low-gain" designs (aes 0.545, bp_multi 0.619,
+bp_be 0.666).** So the threshold-law / ariane-outlier framing is NOT robust to the est choice: it separates
+ariane only with the pessimistic default est. The oracle-free TRIGGER is therefore partly a detector of "is
+the platform-default est badly miscalibrated here" (a layer/RC artifact, R28) — still arguably deployable
+(a deployed flow only has the default est), but it is internally INCONSISTENT to quote a metal3-est
+divergence next to a metal5-est gain. **The +15.3% gain is UNAFFECTED (union vs fair-est at signoff); only
+the "predictive threshold law" framing must be tempered** (recompute the 5-design table at ONE consistent
+est = each design's gain baseline, or withdraw "threshold 0.4"). Aligns with CODEX_CHAIN_REVIEW.md's
+"post-hoc classifier" worry. Full analysis: [DIVERGENCE_METRIC_CONSISTENCY.md](DIVERGENCE_METRIC_CONSISTENCY.md).
+
+Side finding (codex #5, verified, `norm_check.py`): the ariane union top-13k SET is normalization-sensitive
+— own-norm vs rank-percentile Jaccard 0.79, own-norm vs raw-ns 0.60 → **20–40% of the union set is a
+normalization artifact**. Evaluate `blend_crit_conf.py` under all three norms, or justify own-norm.
