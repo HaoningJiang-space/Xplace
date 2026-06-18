@@ -90,22 +90,32 @@ Run substrate: moe-server (`ssh -p 10548 ziheng@10.16.52.172`, hpclab03), **GPU 
 - TERM-2 may add little beyond TERM1 (if controllable detour is small) — being measured now.
 - Physical risk (D5): placement-controllable parasitic delta dominated by cell/CTS/buffering.
 
-## ★ CURRENT STATE (2026-06-18, R29 — depth-verified, supersedes above)
-**Depth-first (#13) paid off — found & resolved a thesis-threatening confound:**
-- R27/R28: ~HALF the headline ariane criticality divergence was a metal3-pessimism ARTIFACT (platform
-  `set_wire_rc -layer metal3` over-estimates long-net R 19× vs GR's metal6/7/8). codex flaw-3 partly real.
-- R29 (the rehabilitation): but the PLACEMENT gain is ROBUST — route-aware union criticality beats the
-  FAIR-layer (metal5) est by +10%, and Xplace's own path-based `--timing_opt` (−2600) by **+5.6%**
-  (union −2454, routed −2480). The gain is NOT a pessimism artifact; it comes from the ACTUAL routed
-  criticality (layer-assignment + detour reorder, ~half the divergence is real, unpredictable by fixed-layer est).
-**Verified positive:** route-aware UNION criticality net-weighting > Xplace --timing_opt by ~+5.6% post-route
-TNS on ariane, robust to the est-baseline layer assumption. Mechanism = layer-assignment-aware criticality
-(CEILING VI) + detour. Method robustness: --timing_force_frac auto-calibration (R25/R26).
-**Honest remaining path to SOTA (#12), NOT rushed (#13):**
-1. detailed-route + OpenRCX (coupling) fidelity re-eval on a TRACTABLE design (bp_fe has 6_final.spef).
-2. IFT route-response cross-term (IMPLICIT_DIFF_TIMING.md) — the theoretically-correct EXTRA gain beyond frozen.
-3. a 3rd VALID design (swerv invalid: 3.4ns/−1.6M placement-insensitive); fair-baseline multi-design.
-4. vs Efficient-TDP (pin2pin) / C3PO head-to-head at iso-congestion.
-**Honest distance to strong SOTA:** a solid, depth-verified ~+5.6%-vs-Xplace-timing positive on 1 design;
-NOT yet multi-design SOTA vs the actual competitors. Real headroom is modest (layer+detour), not the
-inflated metal3 numbers.
+## ★ CURRENT STATE (2026-06-18, R33–R36 — SIGNOFF-fidelity + production SOTA on 1 design, supersedes R29)
+**The ariane positive is now SIGNOFF-fidelity, 0-DRC, and beats BOTH baselines:**
+- **R33:** route-aware union criticality beats the academic fair-est baseline by **+15.3%** post-route
+  coupling TNS at detailed-route + OpenRCX SIGNOFF fidelity (0 DRC, `--use_cell_inflate`). union −823.7,
+  routed −832.0, fair-est −972.5.
+- **R36 (NEW — clean #12 vs production):** union beats Xplace's own production **`--timing_opt` by +15.0%**
+  (−823.7 vs −968.9), BOTH 0-DRC at signoff. R34's "confound" RESOLVED by force-matching `--timing_opt` down
+  (its HPWL saturates ~2.64e7, 6% denser than routability-grade, can't be loosened to union's density). KEY
+  ISOLATION: the two estimated-criticality methods TIE (fair-est −972.5 ≈ `--timing_opt` −968.9, <0.4%)
+  regardless of actuation → **the contribution is the criticality SOURCE, not the force/actuation**.
+- **R35 (NEGATIVE CONTROL):** bp_fe (low-divergence, Spearman 0.97) → all 3 arms tied within 0.3% at signoff
+  → route-awareness ~0 gain, confirming the DIVERGENCE LAW.
+**Three framework pillars (this session, committed):**
+- **DEPLOYABILITY.md:** the "+15%" is a deployable **2-pass place→route→re-place** flow (criticality from an
+  independent base route, no oracle/leak) — downgrades the oracle→predictor gate from blocker to efficiency-opt.
+- **DIVERGENCE_LAW.md:** gain ∝ (1 − agreement(est,routed crit)), measurable oracle-free from pass-1 CSVs
+  (ariane Jaccard 0.24→+15%, bp_fe 0.94→~0). Predictive law + adaptive trigger, not "always add routing".
+- **SOTA_COMPARISON_DESIGN.md:** Path A (oracle net-weight) ⊥ Path B (`--timing_opt`) disjoint but same
+  consumer → R33/R36 cleanly isolate criticality source from actuation.
+**Honest remaining path to STRONG SOTA (#12), NOT rushed (#13):**
+1. **★ 2nd HIGH-DIVERGENCE design** (the main gap): ariane is the only high-div design; bp_fe/aes are low-div
+   negative controls. Candidate = bp_be_top (fresh ORFS, macro-heavy). Show +15% generalizes.
+2. **aes gain measurement** to disambiguate the law's metric (Spearman vs Jaccard disagree on aes).
+3. vs Efficient-TDP (pin2pin) / C3PO.
+4. IFT route-response cross-term (IMPLICIT_DIFF_TIMING.md) — theoretically-correct EXTRA gain (parked: needs
+   high-detour substrate; the RANKING lever, not force, is what works).
+**Honest distance to strong SOTA:** a CLEAN signoff-fidelity, 0-DRC, +15%-vs-production-`--timing_opt`
+positive on 1 design, with a confirming negative control and a predictive law. NOT yet multi-design (the 2nd
+high-divergence design is the gating experiment). This is materially stronger than the prior GR-fidelity +5.6%.
