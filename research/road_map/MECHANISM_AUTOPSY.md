@@ -127,6 +127,29 @@ statistics.** The frac sweep is HYPOTHESIS-GENERATING only.
 **Until ariane_stats.sh returns, the "mechanism survives" claim is NOT established** — only "hypothesis from a
 noisy sweep." (signoff-fair frac-0.3 single point is also single-seed → corroborating at best, not decisive.)
 
+### codex autopsy review (independent, CONFIRMS user + refines the null) — verdict "mechanism survives? NOT YET"
+1. Frac sweep is post-hoc/fragile; +13.3% leans on est being unusually bad at 0.3; +2.4/2.5% may be router noise.
+2. Correct test = PAIRED multi-seed: per seed report `TNS_union−TNS_est`, mean/std/CI, sign/paired-t/Wilcoxon;
+   report est & union variance separately; if sweeping fracs, PREDECLARE the primary frac or correct for
+   selection.
+3. **★ `--timing_force_frac` is only a GLOBAL force-budget control — it does NOT equalize effective per-net
+   pull.** Union & est differ in selected-net SPAN, WA-grad norm, spatial location, density/congestion overlap,
+   #tied nets, dilution. So force-matching removes the crude MAGNITUDE confound but NOT the geometry/SET
+   confound. → the SHUFFLED NULL is the real isolating control.
+4. A single signoff-fair frac-0.3 win is insufficient. Min bar: PAIRED multi-seed signoff at LOCKED frac,
+   0-DRC/backend-complete logs, SAME-STAGE criticality, fanout_norm or endpoint weighting, and negative
+   controls that do NOT reproduce the win.
+5. **Cleanest decisive: stratified permutation P5 at locked frac, same seed, same cardinality, same
+   DEGREE/geometry bins, same force:** est vs union vs shuffled-labels vs **random SAME-DEGREE/same-span nets.**
+   If shuffled/random matches union → not criticality. If union beats the null distribution across paired
+   seeds → the set claim starts to survive.
+**Upgrade to the null (codex #5):** current `shuffle_crit.py` permutes across ALL nets (random degree) — with
+fanout_norm that partly controls degree, but codex wants the null DEGREE-STRATIFIED (random nets matched to the
+critical set's degree bins), because even fanout_norm leaves a spatial/degree geometry difference. Plan: run the
+random-shuffle stats first (cheap first answer); if union beats random-shuffle, STRENGTHEN to a degree-stratified
+null (replace each critical net with a random net in its degree decile — needs net-degree, compute in Xplace)
+before claiming criticality. If union does NOT beat even the random shuffle → done, it's geometry/force.
+
 ## Reframed contribution (until the autopsy resolves the mechanism)
 "A 2-pass route-feedback net-weighting that reduces post-route TNS by ~15% on a macro-congested design at
 signoff" — an EMPIRICAL result whose MECHANISM and GENERALITY are under active autopsy. Do not write the

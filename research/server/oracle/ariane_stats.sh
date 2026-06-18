@@ -3,7 +3,7 @@
 # 3 arms x K seeds: est / union / shuffled-null. Reports per-arm droute_TNS distribution. Decisive
 # comparison = union vs SHUFFLED (same frac/force/cardinality/fanout, random nets): union<<shuffled =>
 # criticality is real; union~shuffled => geometry/force, frac-choice irrelevant. No set -u. GPU 1.
-FRAC=0.3; SEEDS="0 1 2 3 4"
+TOPFRAC=0.10; FORCEFRAC=0.3; SEEDS="0 1 2 3 4"
 source ~/miniconda3/etc/profile.d/conda.sh
 B=/data/ziheng/wzh/bridge; OR=/data/ziheng/wzh/conda_envs/orfs/bin/openroad; XPD=/data/ziheng/wzh/xplace_dac/Xplace
 PY=/data/ziheng/wzh/conda_envs/orfs/bin/python
@@ -14,7 +14,7 @@ run () {
   conda activate /data/ziheng/wzh/conda_envs/xplace
   export PATH=/usr/local/cuda-11.7/bin:$PATH; export PYTHONPATH=$XPD:$PYTHONPATH; cd $XPD
   python main.py --custom_json $B/ariane.json --load_from_raw True --detail_placement True --write_placement True \
-    --oracle_timing_file $csv --oracle_timing_scale 1.0 --oracle_topfrac $FRAC --timing_force_frac $FRAC \
+    --oracle_timing_file $csv --oracle_timing_scale 1.0 --oracle_topfrac $TOPFRAC --timing_force_frac $FORCEFRAC \
     --oracle_pin_weight_mode fanout_norm --seed $seed --output_prefix $pref --gpu 1 > $B/place_$pref.log 2>&1
   DEF=$(ls -t $XPD/result/*/output/${pref}_ariane_dp.def 2>/dev/null | head -1)
   hpwl=$(grep "After DP, HPWL" $B/place_$pref.log | tail -1 | grep -oE "[0-9.]+E[+][0-9]+")
