@@ -552,6 +552,12 @@ not "always add routing".
   the GR-stage apparent routed-harm was a pessimism artifact, gone at coupling-aware signoff.
 - **No harm (important):** route-awareness does NOT meaningfully hurt even where it doesn't help (union
   −0.1% vs fairest = noise). So raw union is SAFE at signoff here, though it added nothing.
+- **★ INDEPENDENT REPRODUCTION (closes codex flaw-4 single-seed):** a fully independent fresh re-run
+  (`bpfe_inflate_signoff.sh`, new placements `bsg_*`, new DR `bsgdr_*`, raw-backend-log verified) reproduced
+  all 3 arms to the decimal (fairest −17885.13, routed −17848.27, union −17900.58; all 0 DRC). Two independent
+  place+route passes → identical numbers ⇒ Xplace determinism confirmed, so the 0.3% tie is a REAL null, not
+  seed noise. (Process note: do NOT `scp` a running driver — mid-run overwrite corrupts bash line-buffered
+  step-3; canonical numbers were taken from the openroad backend logs, which are written independently.)
 - **Two-point divergence law @ signoff:** ariane (Jaccard 0.244) → +15.3%; bp_fe (Jaccard 0.937) → ~0.
   Direction clean; a 3rd design at intermediate divergence would calibrate the curve (DIVERGENCE_LAW §4).
 - **Deployability (DEPLOYABILITY.md):** both designs use the 2-pass place→route→re-place flow with
@@ -637,3 +643,30 @@ when routed picks DIFFERENT critical nets (low Jaccard, ariane 0.244) is there a
   +15% isn't ariane-unique. Tractable many-macro candidates exhausted at NanGate45 except mempool_group
   (4400×4400, heavy) — or accept the scope as "congestion-dominated regime" with ariane as the exemplar +
   the law explaining the negatives. Drivers: `bpmulti_{floorplan,base,arms}.sh`, `bpbe_*`.
+
+## R38 — ★★ CODEX CODE-LEVEL CHAIN REVIEW (整个链路, goal #2) → PIVOT to mechanism verification
+Independent reproduction of R35 this session (hardened/audited driver `bpfe_inflate_signoff.sh`: flock
+single-instance guard, fresh-DEF guard, DRT_FAIL/DRC gates) CONFIRMS the bp_fe negative control exactly:
+fairest −17885.1 / routed −17848.3 / union −17900.6, **all 3 arms 0-DRC, no DRT_FAIL, tied within 0.3%
+(range 52.3 / 17885)**. So R35 is robust to a stricter harness.
+
+Then a deep CODE-LEVEL codex pass (read the CUDA actuator + the criticality dump + the injection, not just
+the scripts) — full writeup in [CODEX_CHAIN_REVIEW_CODE.md](CODEX_CHAIN_REVIEW_CODE.md). 11 chain flaws; the
+**3 deepest are mechanism-invalidating and outrank getting a 2nd design:**
+- **#1** the actuator is route-BLIND WA wirelength; nothing proves shortening it improves the *routed* slack
+  of the weighted net (could be cell-delay/coupling/congestion dominated). Empirical ariane +15% stands;
+  the "we optimize timing" MECHANISM is unproven.
+- **#2** per-net-min slack is broadcast to ALL pins → weights high-fanout geometry, not endpoint sensitivity
+  → the gain could be a fanout/geometry bias, not timing.
+- **#4** est (pre-CTS) vs routed (post-CTS+DP+GR) are different STAGES → the "divergence" is partly a CTS
+  artifact, not pure routing reordering.
+Plus law-as-stated confounds: **#3** Jaccard measured at GR fidelity but gain at signoff; **#8** arms weight
+absolute top-13k (=46% bp_fe vs 10% ariane) while the law table uses top-10% — inconsistent fraction.
+
+**PIVOT (depth-first, goal #13):** mempool_group (the pre-registered 2nd heavy-macro design) is BLOCKED —
+only a `config.mk` stub exists in this ORFS checkout (no SDC/netlist/macros) → floorplan fails rc=2. Since a
+2nd design cannot rescue the thesis if ariane's +15% is itself a geometry/CTS artifact, the load-bearing work
+moves to MECHANISM VERIFICATION on the existing ariane positive: P1 recompute ariane Jaccard at DR+OpenRCX
+and post-CTS same-stage (#3/#4, recompute-only, cheapest); P2 per-critical-load-pin vs per-net-min at matched
+force (#2); P3 finite-difference along the timing gradient + reroute (#1, decisive). FIXED #11 (committed
+`blend_crit.py`); #9/#10 gates added to the bp_fe driver (backport to ariane collector pending).
