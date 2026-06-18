@@ -14,9 +14,9 @@ each claim points to its evidence doc. (串起来: this is the system, not a res
 > mechanism story or the law into the paper until the autopsy resolves them. §2/§4 below are tempered.**
 
 ---
-## 0. One sentence (framing per CODEX_CHAIN_REVIEW.md — the DEFENSIBLE scope)
-**A deployable TWO-PASS route-feedback timing-placement flow for MACRO-CONGESTED designs, with an
-ORACLE-FREE divergence TRIGGER and one signoff-validated high-divergence rescue case:** re-placing with a
+## 0. One sentence — VCERF (Verifier-Calibrated Endpoint Route Feedback; METHOD_DERIVATION.md)
+**A deployable TWO-PASS route-feedback timing-placement framework for MACRO-CONGESTED designs, with an
+ORACLE-FREE divergence TRIGGER, bounded endpoint actuation, a SIGNOFF VERIFIER, and one validated rescue case:** re-placing with a
 gentle net-weight on the UNION of estimated + first-pass-routed criticality closes post-route timing a
 congestion-blind placer cannot (+15% signoff coupling TNS on ariane vs both academic and production
 baselines), and a pass-1 critical-set-Jaccard trigger predicts WHEN to apply it (does-no-harm elsewhere).
@@ -24,10 +24,16 @@ baselines), and a pass-1 critical-set-Jaccard trigger predicts WHEN to apply it 
 (those are not yet earned — see §4/§6). The load-bearing open test: a 2nd low-Jaccard design that GAINS.
 
 ---
-## 1. The problem (first principles, FRAMEWORK.md §1)
+## 1. The problem (first principles, FRAMEWORK.md §1 + METHOD_DERIVATION.md §4)
 Global placement minimizes a surrogate `f_est(x)` (estimated-RC timing) as a proxy for `f_true(x)`
 (post-route timing). They differ by a structured, placement-dependent gap `Δ(x)` = the routing response.
-Closing Δ is the whole thesis. Δ has three necessary properties — each an experiment:
+Closing Δ is the whole thesis. **Congestion→timing is NONLINEAR (user, METHOD_DERIVATION §4):**
+congestion → detour/lower-layer/vias/coupling-cap → worse R,C,slew,load → larger arc delay → WNS/TNS loss
+ONLY if the arc is timing-critical. So the useful variable is NOT raw congestion ρ_b but **timing-priced
+congestion** `π_b = Σ_{critical arcs a through bin b} κ_a·∂delay_a/∂ρ_b` — sparse, path-dependent. This
+explains the mixed evidence (uniform/timing route FORCE hurts by inflating HPWL/load; route-feedback
+criticality RANKING helps): **price congestion by criticality, don't optimize congestion as a generic
+secondary objective.** ⇒ route feedback's value is as a CRITICALITY-SET source, not a detour-magnitude force. Δ has three necessary properties — each an experiment:
 - **(E) Δ exists & is structured** — routed criticality ≠ estimated criticality on congested designs.
 - **(C) Δ is placement-controllable** — re-placing on routed criticality changes post-route timing.
 - **(P) Δ is recoverable without an oracle** — a 2-pass flow's first route supplies it (no ML needed).
@@ -42,18 +48,30 @@ The hard-won, 4×-confirmed mechanism (R15, R18, R30, R36-`--timing_opt`):
 - → **Actuation must be GENTLE** (flat top-K net-weight). Source (routed criticality) and actuation
   (gentle) are BOTH necessary; their interaction is the recipe. (CODEX_REVIEW_R36.md Issue 2.)
 
-## 3. The METHOD — a deployable 2-pass flow (DEPLOYABILITY.md)
+## 3. The METHOD — VCERF: Verifier-Calibrated Endpoint Route Feedback (METHOD_DERIVATION.md, the spine)
+The method worth pursuing (user derivation, 2026-06-18), an ADAPTIVE framework — NOT "another timing placer":
 ```
-place(base) → route(base) → extract per-net routed slack (pass-1 routing feedback)
-            → re-place weighted by UNION(est, routed) criticality (gentle net-weight)
-            → route  → judged POST-ROUTE at detailed-route + OpenRCX coupling SIGNOFF
+1. Pass-1 base placement (Xplace / Xplace-Timing) → legal/routable.
+2. SAME-STAGE timing snapshots: on one post-CTS/post-DP netlist, dump est slack BEFORE route and
+   routed/OpenRCX slack AFTER route. (do NOT mix pre-CTS est with post-CTS routed — autopsy #4.)
+3. ENDPOINT criticality: build crit on driver→sink endpoints (not per-net min); if endpoints unavailable,
+   FANOUT-NORMALIZED net weighting is the mandatory control.
+4. DIVERGENCE TRIGGER: constant-top-fraction critical-set Jaccard at a NAMED est fidelity — a HEURISTIC, not
+   a law, until recomputed consistently.
+5. BOUNDED 2nd-pass actuation: g = g_WL + g_density + β·normalize(g_route_feedback), β via --timing_force_frac
+   (NOT an arbitrary raw scale).
+6. VERIFIER acceptance: route the candidate; accept ONLY if signoff TNS/WNS improves with no dirty DRC/DRT
+   fail / no unacceptable routed-WL/via/congestion regression.
+7. SKIP rule: high est↔routed agreement → skip the 2nd pass (bp_fe = the negative-control example).
 ```
-- **UNION criticality** `crit = max(est_norm, routed_norm)`, top-K: est and routed each MISS a *different*
-  subset of truly-critical nets; the union recovers both (R23). Robust across the divergence axis.
-- **NOT an oracle:** routed criticality is from routing an INDEPENDENT base placement — a standard
-  industrial 2-pass place→route→re-place flow. No leak, no unavailable knowledge. The "oracle→predictor
-  make-or-break" gate is thus downgraded to an efficiency-optimization (an in-loop GGR-STA bridge would
-  make it cheaper, not possible).
+- **Why endpoint (arc) feedback is the right unit:** `S_endpoint(x)=Σ_(u,v) κ_uv·dist(u,v)` removes the
+  current surrogate's 3 accidental effects — fanout bias, wrong-sink bias, root-order bias — and aligns with
+  Efficient-TDP pin2pin actuation while adding route-feedback criticality as the NOVEL source.
+- **NOT an oracle:** the routed criticality is pass-1's own route (independent base) — a standard 2-pass
+  place→route→re-place. The "oracle→predictor" gate is an efficiency-optimization, not a blocker.
+- **The SOTA angle (broader than "ariane-only"):** existing placers optimize ESTIMATED criticality; VCERF
+  DETECTS when est & routed critical SETS disagree, reselects the critical endpoints from real route feedback,
+  and VERIFIES by signoff — self-skipping on low-divergence designs. The trigger is part of the algorithm.
 
 ## 4. WHEN it applies — the DIVERGENCE TRIGGER (a HYPOTHESIS, not yet a law — codex)
 **Hypothesis: gain ∝ (1 − top-K critical-SET Jaccard(est, routed)), with a threshold near Jaccard ≈ 0.4.**
