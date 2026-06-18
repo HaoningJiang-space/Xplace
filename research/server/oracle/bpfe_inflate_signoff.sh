@@ -8,6 +8,9 @@
 # LAW (big gain only when divergence is high, as on ariane +15.3%), not "always add routing".
 # Place sequential GPU 1 (GPU0=PPoPP, do not touch); DR concurrent (CPU). No set -u (per standing rule).
 source ~/miniconda3/etc/profile.d/conda.sh
+# single-instance guard (a prior launch double-fired -> 2 racing instances corrupting shared XP_TAG files)
+exec 200>/tmp/bpfe_inflate_signoff.lock
+flock -n 200 || { echo "ALREADY_RUNNING, abort"; exit 9; }
 B=/data/ziheng/wzh/bridge
 OR=/data/ziheng/wzh/conda_envs/orfs/bin/openroad
 XPD=/data/ziheng/wzh/xplace_dac/Xplace
